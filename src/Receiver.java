@@ -20,5 +20,6 @@ public class Receiver {
         String str = new String(dp.getData(), dp.getLength());
 
         System.out.println(str);
+        // changes
     }
 }
