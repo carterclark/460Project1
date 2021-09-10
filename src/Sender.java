@@ -102,23 +102,36 @@ public class Sender {
 		System.out.println("Output filename is     : " + outputFile);
 		
 		try (
-				InputStream inputStream = new FileInputStream(inputFile);
-	            OutputStream outputStream = new FileOutputStream(outputFile); // for testing purposes 
+				FileInputStream inputStream = new FileInputStream(inputFile);
+	            FileOutputStream outputStream = new FileOutputStream(outputFile); // for testing purposes 
 	        ) {
 	 
 	        byte[] buffer = new byte[packetSize];
 	 
-	        while (inputStream.read(buffer) != -1) {
-	        	
+	        int packetCount = 0;
+	        long startOffset = 0; 
+	        long endOffset = 0;
+	        
+        	System.out.println("\n\nSENDING DATA");
+        	while (inputStream.read(buffer) != -1) {
+
+        		// track read position in the file
+        		endOffset = inputStream.getChannel().position();
+	        	System.out.format("Packet: %4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n", ++packetCount, startOffset, endOffset);
+	        	// start offset will be the offset the prior read ended at which is 0 for the first read
+	        	// the position of the last byte read will become the effective 0 for the next read which will start where the last read stopped
+	            startOffset = endOffset;
+
 	        	// THIS WILL BE WHERE THE DATA SEND TAKES PLACE
-	            outputStream.write(buffer); // for testing purposes
-	            
+	        	outputStream.write(buffer); // for testing purposes
 	            
 	        }
+        	
+        	inputStream.close();
+        	outputStream.close();
 	 
 	    } catch (IOException ex) {
 	        ex.printStackTrace();
 	    }
-		
 	}
 }
