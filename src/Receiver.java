@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-public class Receiver {
+public class Receiver {// Server
 
     public static void main(String[] args) throws IOException{
 
