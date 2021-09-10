@@ -1,6 +1,6 @@
 import java.io.*;
 
-public class Sender {
+public class Sender {// Client
 
 	private static String receiverAddress; 
 	private static String inputFile;
