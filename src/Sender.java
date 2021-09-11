@@ -30,7 +30,6 @@ public class Sender {
 		
 		if(args.length < 3) Usage(); // run with no parameters or too few to see usage message
 
-		System.out.println("\nSENDING FILE\n");
 		while (i < args.length) {
 			arg = args[i];
 			
@@ -129,6 +128,7 @@ public class Sender {
 	        long startOffset = 0; 
 	        long endOffset = 0;
 	        
+		System.out.println("\nSENDING FILE\n");
           	while (true) {
           		
             	// read the input file in packetSize chunks, and send them to the server	        
