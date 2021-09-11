@@ -1,9 +1,10 @@
+
 import java.io.*;
 import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.SocketException;
 
-public class Receiver {
+public class Receiver {// Server
 
 	private static DatagramSocket socket;
     private static byte[] buf = new byte[4096];
@@ -61,4 +62,3 @@ public class Receiver {
 		}
 	}
 }
-

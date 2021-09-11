@@ -3,7 +3,7 @@ import java.net.DatagramSocket;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 
-public class Sender {
+public class Sender {// Client
 
 	private static String receiverAddress = ""; 
 	private static String inputFile = "";
