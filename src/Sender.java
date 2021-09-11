@@ -162,6 +162,6 @@ public class Sender {
 			System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
 	    } catch (IOException ex) {
 	        ex.printStackTrace();
-		}
+	    }
 	}
 }
