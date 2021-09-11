@@ -19,7 +19,7 @@ public class Sender {
 		System.out.println("-d is the percentage of packets to alter.  -d 2.5 (not implemented)");
 		System.out.println("-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)");
 		System.out.println("-t is the timeout value.  -t 300 (not implemented)");
-		System.out.println("Usage: java Sender [-d #.#] [-s ###] [-t ###] reciever_address reciever_port input_file");
+		System.out.println("Usage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
 		System.exit(1);
 	}
 	
