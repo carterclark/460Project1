@@ -1,75 +1,64 @@
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.DatagramPacket;
+import java.io.*;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.DatagramPacket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class Receiver {// Server
-	private DatagramSocket socket;
-	private List<String> listQuotes = new ArrayList<String>();
-	private Random random;
 
-	public Receiver(int port) throws SocketException {
-		socket = new DatagramSocket(port);
-		random = new Random();
-	}
-
+	private static DatagramSocket socket;
+    private static byte[] buf = new byte[4096];
+	
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println("Syntax: Receiver <file> <port>");
-			return;
-		}
 
-		String inputFile = args[0];
-		int port = Integer.parseInt(args[1]);
-
+		FileOutputStream outputStream = null;
+		
+		// logging counters/variables
+		int packetCount = 0;
+        long startOffset = 0; 
+        long endOffset = 0;
+		
+        if(args.length < 2) {
+        	System.out.println("\n\nERROR: you must specify the port and the new file name.  Example: java Receiver 5656 some-new-file.jpg");
+        	System.exit(1);
+        }
+        
 		try {
-			Receiver server = new Receiver(port);
-			server.loadQuotesFromFile(inputFile);
-			server.service();
-		} catch (SocketException ex) {
-			System.out.println("Socket error: " + ex.getMessage());
-		} catch (IOException ex) {
-			System.out.println("I/O error: " + ex.getMessage());
+
+			// initialize socket and create output stream
+			socket = new DatagramSocket(Integer.parseInt(args[0]));
+
+			System.out.println("\nWAITING FOR FILE\n");
+			while(true) {
+				DatagramPacket packet = new DatagramPacket(buf, buf.length); // datagram to hold incoming packet
+				socket.receive(packet); // wait for a packet
+				
+            	endOffset += packet.getLength(); // endOffset accumulates with length of data in packet, offsets are relative to the file not the buffer
+            	if(new String(packet.getData()).trim().equals("end")) {
+                	System.out.println("Received end packet.  Terminating.");
+	            	break;
+	            } else {
+	            	// if output stream is not initialized do it now
+	                if(outputStream == null) {
+	                	outputStream = new FileOutputStream(args[1]); 
+	                }
+		        	System.out.format("Packet: %4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n", ++packetCount, startOffset, endOffset); // progress logging
+	            	outputStream.write(packet.getData(), 0, packet.getLength());
+	            	startOffset = endOffset; // start offset of next packet will be end offset of current packet, offsets are relative to the file not the buffer
+	            }
+	            
+	            buf = new byte[4096]; // flush buffer
+			}
+			
+			// done, close sockets/streams
+			socket.close();
+			outputStream.close();
+		
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
 		}
-	}
-
-	private void service() throws IOException {
-		while (true) {
-			DatagramPacket request = new DatagramPacket(new byte[1], 1);
-			socket.receive(request);
-
-			String quote = getRandomQuote();
-			byte[] buffer = quote.getBytes();
-
-			InetAddress clientAddress = request.getAddress();
-			int clientPort = request.getPort();
-
-			DatagramPacket response = new DatagramPacket(buffer, buffer.length, clientAddress, clientPort);
-			socket.send(response);
-		}
-	}
-
-	private void loadQuotesFromFile(String quoteFile) throws IOException {
-		BufferedReader reader = new BufferedReader(new FileReader(quoteFile));
-		String aQuote;
-
-		while ((aQuote = reader.readLine()) != null) {
-			listQuotes.add(aQuote);
-		}
-
-		reader.close();
-	}
-
-	private String getRandomQuote() {
-		int randomIndex = random.nextInt(listQuotes.size());
-		String randomQuote = listQuotes.get(randomIndex);
-		return randomQuote;
 	}
 }
