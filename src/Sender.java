@@ -62,7 +62,8 @@ public class Sender {// Client
 					} else {
 						packetSize = Integer.parseInt(args[++i]);
 						if (packetSize > 4096) {
-
+							System.err.println("Packetsize cannot be greater than 4096");
+							Usage();
 						}
 					}
 					break;
