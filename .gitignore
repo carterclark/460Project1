@@ -1,2 +1,7 @@
 .classpath
 .project
+*.iml
+new_image.png
+.idea
+/shelf/
+out
