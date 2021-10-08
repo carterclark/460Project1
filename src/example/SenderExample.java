@@ -1,86 +1,59 @@
 package example;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
+
+import java.io.*;
+
+import java.net.*;
+
+import java.util.Scanner;
+
+/**
+ * @author StarkeeCode
+ */
 
 public class SenderExample {
-    Socket sender;
-    ObjectOutputStream out;
-    ObjectInputStream in;
-    String packet, ack, str, msg;
-    int n, i = 0, sequence = 0;
-
-    SenderExample() {
-    }
 
     public static void main(String args[]) {
-        SenderExample s = new SenderExample();
-        s.run();
-    }
 
-    public void run() {
+        int portOne = 9000, index, portTwo = 8000;
+        String localhost = "localhost";
+        DataOutputStream outputStream;
+        String fullMessage = "";
+
         try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println("Waiting for Connection....");
-            sender = new Socket("localhost", 8080);
-            sequence = 0;
-            out = new ObjectOutputStream(sender.getOutputStream());
-            out.flush();
-            in = new ObjectInputStream(sender.getInputStream());
-            str = (String) in.readObject();
-            System.out.println("reciver     > " + str);
-            System.out.println("Enter the data to send....");
-            packet = br.readLine();
-            n = packet.length();
-            do {
-                try {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter number of frames : ");
+            int number = scanner.nextInt();
 
-                    if (i < n) {
-                        msg = String.valueOf(sequence);
-                        msg = msg.concat(packet.substring(i, i + 1));
-                    } else if (i == n) {
-                        msg = "end";
-                        out.writeObject(msg);
-                        break;
-                    }
-                    out.writeObject(msg);
-                    if (sequence == 0) {
-                        sequence = 1;
-                    }
-                    else {
-                        sequence = 0;
-                    }
-                    out.flush();
-                    System.out.println("data sent>" + msg);
-                    ack = (String) in.readObject();
-                    System.out.println("waiting for ack.....\n\n");
-                    if (ack.equals(String.valueOf(sequence))) {
-                        i++;
-                        System.out.println("receiver   >  " + " packet recieved\n\n");
-                    } else {
-                        System.out.println("Time out resending data....\n\n");
-                        if (sequence == 0) {
-                            sequence = 1;
-                        }
-                        else {
-                            sequence = 0;
-                        }
-                    }
-                } catch (Exception e) {
-                }
-            } while (i < n + 1);
-            System.out.println("All data sent. exiting.");
-        } catch (Exception e) {
-        } finally {
-            try {
-                in.close();
-                out.close();
-                sender.close();
-            } catch (Exception e) {
+            if (number == 0) {
+                System.out.println("No frame is sent");
+
+            } else {
+                Socket socketTwo;
+                socketTwo = new Socket(localhost, portTwo);
+                outputStream = new DataOutputStream(socketTwo.getOutputStream());
+                outputStream.write(number);
             }
+
+            for (index = 0; index < number; index++) {
+                System.out.print("Enter message : ");
+                String inputString = scanner.next();
+                System.out.println("Frame " + index + " is sent");
+
+                Socket socketOne;
+                socketOne = new Socket(localhost, portOne + index);
+                outputStream = new DataOutputStream(socketOne.getOutputStream());
+                outputStream.writeUTF(inputString);
+
+                DataInputStream inputStream = new DataInputStream(socketOne.getInputStream());
+                Integer currentFrame = inputStream.read();
+                System.out.println("Acknowledgement for :" + currentFrame + " is  received");
+            }
+
+        } catch (Exception ex) {
+            System.out.println("ERROR :" + ex);
         }
+
     }
+
 }

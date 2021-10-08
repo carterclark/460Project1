@@ -1,79 +1,44 @@
 package example;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+
+import java.net.*;
+
+import java.util.*;
+
+/**
+ * @author StarkeeCode
+ */
 
 public class ReceiverExample {
-    ServerSocket reciever;
-    Socket connection = null;
-    ObjectOutputStream out;
-    ObjectInputStream in;
-    String packet, ack;
-    StringBuilder data = new StringBuilder("");
-    int i = 0, sequence = 0;
-
-    ReceiverExample() {
-    }
-
-    public void run() {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            reciever = new ServerSocket(8080, 10);
-            System.out.println("waiting for connection...");
-            connection = reciever.accept();
-            sequence = 0;
-            System.out.println("Connection established   :");
-            out = new ObjectOutputStream(connection.getOutputStream());
-            out.flush();
-            in = new ObjectInputStream(connection.getInputStream());
-            out.writeObject("connected    .");
-
-            do {
-                try {
-                    packet = (String) in.readObject();
-                    if (Integer.parseInt(packet.substring(0, 1)) == sequence) {
-                        data.append(packet.substring(1));
-                        if (sequence == 0) {
-                            sequence = 1;
-                        }
-                        else {
-                            sequence = 0;
-                        }
-                        System.out.println("\n\nreceiver         >" + packet);
-                    } else {
-                        System.out.println("\n\nreceiver         >" + packet + "   duplicate data");
-                    }
-                    if (i < 3) {
-                        out.writeObject(String.valueOf(sequence));
-                        i++;
-                    } else {
-                        out.writeObject(String.valueOf((sequence + 1) % 2));
-                        i = 0;
-                    }
-                } catch (Exception e) {
-                }
-            } while (!packet.equals("end"));
-            System.out.println("Data recived=" + data);
-            out.writeObject("connection ended    .");
-        } catch (Exception e) {
-        } finally {
-            try {
-                in.close();
-                out.close();
-                reciever.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     public static void main(String args[]) {
-        ReceiverExample s = new ReceiverExample();
-            s.run();
 
+        String host = "Serverhost";
+        int index;
+        try {
+            ServerSocket ss2;
+            ss2 = new ServerSocket(8000);
+            Socket s1 = ss2.accept();
+            DataInputStream dd1 = new DataInputStream(s1.getInputStream());
+
+            Integer i1 = dd1.read();
+            for (index = 0; index < i1; index++) {
+
+                ServerSocket serverSocket;
+                serverSocket = new ServerSocket(9000 + index);
+                Socket socket = serverSocket.accept();
+                DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+                String dataUTF = dataInputStream.readUTF();
+
+                System.out.println(dataUTF);
+                System.out.println("Frame " + index + " received");
+                DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+                dataOutputStream.write(index);
+                System.out.println("ACK sent for " + index);
+            }
+        } catch (Exception ex) {
+            System.out.println("Error" + ex);
+        }
     }
 }

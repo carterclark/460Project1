@@ -1,4 +1,3 @@
-import example.SenderExample;
 
 import java.io.*;
 import java.net.DatagramPacket;
@@ -19,8 +18,10 @@ public class Sender {// Client
     private static int timeOut = 300; // default timeout
     private static int receiverPort = 0;
 
-    int sequence = 0;
+    private FileInputStream inputStream;
+    private int sequence = 0;
     private Packet packet = new Packet();
+    private int index = 0;
 
     // main
     public static void main(String[] args) {
@@ -113,9 +114,9 @@ public class Sender {// Client
             Usage();
     }
 
-    public void run(String[] args) {
+    private void run(String[] args) {
         InetAddress address;
-        DatagramSocket socket;
+        DatagramSocket senderSocket;
 
         // verify there are at least three parameters being passed in
         if (args.length < 3) {
@@ -136,13 +137,11 @@ public class Sender {// Client
 
         try {
 
-            FileInputStream inputStream = new FileInputStream(inputFile); // open input stream
-
+            inputStream = new FileInputStream(inputFile); // open input stream
             address = InetAddress.getByName(receiverAddress); // convert recieverAddress to an InetAddress
-            socket = new DatagramSocket(); // Instantiate the datagram socket
+            senderSocket = new DatagramSocket(); // Instantiate the datagram socket
             sequence = 0;
             byte[] buffer = new byte[packetSize]; // create the "send" buffer
-
 
             // logging counters/variables
             int packetCount = 0;
@@ -157,8 +156,8 @@ public class Sender {// Client
                 if (bytesRead == -1) {
                     // end of file, tell the receiver that we are done sending
                     buffer = "end".getBytes();
-                    DatagramPacket packet = new DatagramPacket(buffer, 3, address, receiverPort);
-                    socket.send(packet);
+                    DatagramPacket datagramPacket = new DatagramPacket(buffer, 3, address, receiverPort);
+                    senderSocket.send(datagramPacket);
                     System.out.println("Sent end packet.  Terminating.");
                     break;
                 } else {
@@ -173,7 +172,7 @@ public class Sender {// Client
 
                     // create and send the packet
                     DatagramPacket packet = new DatagramPacket(buffer, bytesRead, address, receiverPort);
-                    socket.send(packet);
+                    senderSocket.send(packet);
                     buffer = new byte[packetSize]; // flush buffer
                 }
 
@@ -181,7 +180,7 @@ public class Sender {// Client
 
             // done, close streams/sockets
             inputStream.close();
-            socket.close();
+            senderSocket.close();
 
         } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
