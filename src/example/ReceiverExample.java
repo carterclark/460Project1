@@ -1,44 +1,52 @@
 package example;
 
 import java.io.*;
-
 import java.net.*;
-
+import java.nio.*;
 import java.util.*;
 
-/**
- * @author StarkeeCode
- */
+class ReceiverExample {
+    private static final int BUFFER_SIZE = 1024;
+    private static final int PORT = 6789;
 
-public class ReceiverExample {
+    public static void main(String[] args) throws IOException {
+        // Create a server socket
+        DatagramSocket serverSocket = new DatagramSocket(PORT);
 
-    public static void main(String args[]) {
+        // Set up byte arrays for sending/receiving data
+        byte[] receiveData = new byte[BUFFER_SIZE];
+        byte[] dataToSend;
 
-        String host = "Serverhost";
-        int index;
-        try {
-            ServerSocket ss2;
-            ss2 = new ServerSocket(8000);
-            Socket s1 = ss2.accept();
-            DataInputStream dd1 = new DataInputStream(s1.getInputStream());
+        // Infinite loop to check for connections
+        while (true) {
 
-            Integer i1 = dd1.read();
-            for (index = 0; index < i1; index++) {
+            // Get the received packet
+            DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+            serverSocket.receive(receivedPacket);
 
-                ServerSocket serverSocket;
-                serverSocket = new ServerSocket(9000 + index);
-                Socket socket = serverSocket.accept();
-                DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
-                String dataUTF = dataInputStream.readUTF();
+            // Get the message from the packet
+            int message = ByteBuffer.wrap(receivedPacket.getData()).getInt();
 
-                System.out.println(dataUTF);
-                System.out.println("Frame " + index + " received");
-                DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-                dataOutputStream.write(index);
-                System.out.println("ACK sent for " + index);
+            Random random = new Random();
+            int chance = random.nextInt(100);
+
+            // 1 in 2 chance of responding to the message
+            if (((chance % 2) == 0)) {
+                System.out.println("FROM CLIENT: " + message);
+
+                // Get packet's IP and port
+                InetAddress IPAddress = receivedPacket.getAddress();
+                int port = receivedPacket.getPort();
+
+                // Convert message to uppercase
+                dataToSend = ByteBuffer.allocate(4).putInt(message).array();
+
+                // Send the packet data back to the client
+                DatagramPacket packetToSend = new DatagramPacket(dataToSend, dataToSend.length, IPAddress, port);
+                serverSocket.send(packetToSend);
+            } else {
+                System.out.println("Oops, packet with sequence number " + message + " was dropped");
             }
-        } catch (Exception ex) {
-            System.out.println("Error" + ex);
         }
     }
 }

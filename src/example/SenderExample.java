@@ -1,59 +1,64 @@
 package example;
 
-
 import java.io.*;
-
 import java.net.*;
+import java.nio.*;
 
-import java.util.Scanner;
+class SenderExample {
+    private static final int BUFFER_SIZE = 1024;
+    private static final int PORT = 6789;
+    private static final String HOSTNAME = "localhost";
+    private static final int BASE_SEQUENCE_NUMBER = 42;
 
-/**
- * @author StarkeeCode
- */
+    public static void main(String args[]) throws Exception {
+        // Create a socket
+        DatagramSocket socket = new DatagramSocket();
+        socket.setSoTimeout(1000);
 
-public class SenderExample {
+        // The message we're going to send converted to bytes
+        int sequenceNumber = BASE_SEQUENCE_NUMBER;
 
-    public static void main(String args[]) {
 
-        int portOne = 9000, index, portTwo = 8000;
-        String localhost = "localhost";
-        DataOutputStream outputStream;
-        String fullMessage = "";
+        for (int counter = 0; counter < 10; counter++) {
+            boolean timedOut = true;
 
-        try {
-            Scanner scanner = new Scanner(System.in);
-            System.out.print("Enter number of frames : ");
-            int number = scanner.nextInt();
+            while (timedOut) {
+                sequenceNumber++;
 
-            if (number == 0) {
-                System.out.println("No frame is sent");
+                // Create a byte array for sending and receiving data
+                byte[] sendData = new byte[BUFFER_SIZE];
+                byte[] receiveData = new byte[BUFFER_SIZE];
 
-            } else {
-                Socket socketTwo;
-                socketTwo = new Socket(localhost, portTwo);
-                outputStream = new DataOutputStream(socketTwo.getOutputStream());
-                outputStream.write(number);
+                // Get the IP address of the server
+                InetAddress IPAddress = InetAddress.getByName(HOSTNAME);
+
+                System.out.println("Sending Packet (Sequence Number " + sequenceNumber + ")");
+                // Get byte data for message
+                sendData = ByteBuffer.allocate(4).putInt(sequenceNumber).array();
+
+                try {
+                    // Send the UDP Packet to the server
+                    DatagramPacket packet = new DatagramPacket(sendData, sendData.length, IPAddress, 6789);
+                    socket.send(packet);
+
+                    // Receive the server's packet
+                    DatagramPacket received = new DatagramPacket(receiveData, receiveData.length);
+                    socket.receive(received);
+
+                    // Get the message from the server's packet
+                    int returnMessage = ByteBuffer.wrap(received.getData()).getInt();
+
+                    System.out.println("FROM SERVER:" + returnMessage);
+                    // If we receive an ack, stop the while loop
+                    timedOut = false;
+                } catch (SocketTimeoutException exception) {
+                    // If we don't get an ack, prepare to resend sequence number
+                    System.out.println("Timeout (Sequence Number " + sequenceNumber + ")");
+                    sequenceNumber--;
+                }
             }
-
-            for (index = 0; index < number; index++) {
-                System.out.print("Enter message : ");
-                String inputString = scanner.next();
-                System.out.println("Frame " + index + " is sent");
-
-                Socket socketOne;
-                socketOne = new Socket(localhost, portOne + index);
-                outputStream = new DataOutputStream(socketOne.getOutputStream());
-                outputStream.writeUTF(inputString);
-
-                DataInputStream inputStream = new DataInputStream(socketOne.getInputStream());
-                Integer currentFrame = inputStream.read();
-                System.out.println("Acknowledgement for :" + currentFrame + " is  received");
-            }
-
-        } catch (Exception ex) {
-            System.out.println("ERROR :" + ex);
         }
 
+        socket.close();
     }
-
 }
