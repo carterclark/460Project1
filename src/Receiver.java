@@ -75,7 +75,7 @@ public class Receiver {// Server
             serverSocket.close();
             outputStream.close();
 
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
