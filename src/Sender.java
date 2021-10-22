@@ -4,8 +4,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-import static util.Util.removeSpaces;
-
 public class Sender extends SenderUtil {// Client
 
     // Steps to use:
@@ -32,7 +30,7 @@ public class Sender extends SenderUtil {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
-            packetSize = (int) file.length() / numOfFrames;
+            packetSize = (int) file.length() / numOfFrames++;
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             serverSocket = new DatagramSocket(); // Instantiate the datagram socket
@@ -58,35 +56,36 @@ public class Sender extends SenderUtil {// Client
                     break;
                 } else {
                     endOffset += bytesRead;
-                    System.out.format("Packet: %4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n",
-                            ++packetCount, startOffset, endOffset);
+                    System.out.format("Packet: %4d  :%4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n",
+                            ++packetCount, numOfFrames, startOffset, endOffset);
                     startOffset = endOffset;
 
                     // create and send the packet
-                    DatagramPacket packet = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
-                    serverSocket.send(packet);
+                    DatagramPacket packetToSend = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
+                    serverSocket.send(packetToSend);
                     dataToSend = new byte[packetSize]; // flush buffer
 
                     while (true) {
                         // Receive the server's packet
-                        DatagramPacket received = new DatagramPacket(dataToReceive, dataToReceive.length);
-                        serverSocket.receive(received);
+                        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+                        serverSocket.receive(receivedPacket);
 
-                        // Get the message from the server's packet
-                        String returnMessage = new String(received.getData()).trim();
-                        if (returnMessage.equals("ok")) {
+                        Packet packetFromServer = (Packet) convertByteArrayToPacket(receivedPacket.getData());
+
+                        System.out.println("Ack from server: " + packetFromServer.getAck());
+
+                        // Check ack from server
+                        if (packetFromServer.getAck() == startOffset) {
                             break;
-                        } else {
-                            System.out.println("Incorrect Ack");
                         }
+                        System.out.println("Ack not received");
                     }
-
                 }
             } while (true);
             // done, close streams/sockets
             inputStream.close();
             serverSocket.close();
-        } catch (FileNotFoundException ex) {
+        } catch (FileNotFoundException | ClassNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
         } catch (IOException ex) {
             ex.printStackTrace();

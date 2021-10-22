@@ -1,16 +1,16 @@
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 public class Receiver {// Server
 
-    private static DatagramSocket serverSocket;
     private static byte[] dataToReceive = new byte[4096];
-    private static byte[] dataToSend = new byte[4096];
+    private static final short GOOD_CHECKSUM = 0;
+    private static final short BAD_CHECKSUM = 1;
 
     public static void main(String[] args) {
         // Steps to use:
@@ -18,7 +18,6 @@ public class Receiver {// Server
         // java Receiver 8080 new_image.png
 
         FileOutputStream outputStream = null;
-
         // logging counters/variables
         int packetCount = 0;
         long startOffset = 0;
@@ -29,31 +28,25 @@ public class Receiver {// Server
                     "\n\nERROR: you must specify the port and the new file name.  Example: java Receiver 5656 some-new-file.jpg");
             System.exit(1);
         }
-
         try {
-
             // initialize socket and create output stream
-            serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
+            DatagramSocket serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
 
             System.out.println("\nWAITING FOR FILE\n");
             while (true) {
-                DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram to hold incoming packet
-                serverSocket.receive(receivedPacket); // wait for a start packet
+                DatagramPacket receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram to hold incoming packet
+                serverSocket.receive(receivedDatagram); // wait for a start packet
 
-                // Get the message from the packet
-                byte[] message = "ok".getBytes(StandardCharsets.UTF_8);
-
-                // Send the packet data back to the client
-                DatagramPacket packetToSend = new DatagramPacket(
-                        message,
-                        message.length,
-                        receivedPacket.getAddress(),
-                        receivedPacket.getPort());
-                serverSocket.send(packetToSend);
-
-                endOffset += receivedPacket.getLength(); // endOffset accumulates with length of data in packet, offsets are
+                // endOffset accumulates with length of data in packet, offsets are
                 // relative to the file not the buffer
-                if (new String(receivedPacket.getData()).trim().equals("end")) {
+                endOffset += receivedDatagram.getLength();
+                System.out.println("length: " + receivedDatagram.getLength()
+                        + "\nendOffset" + endOffset);
+
+                // Make packet
+                makeAndSendPacket((int) endOffset, serverSocket, receivedDatagram);
+
+                if (new String(receivedDatagram.getData()).trim().equals("end")) {
                     System.out.println("Received end packet.  Terminating.");
                     break;
                 } else {
@@ -63,7 +56,7 @@ public class Receiver {// Server
                     }
                     System.out.format("Packet: %4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n",
                             ++packetCount, startOffset, endOffset); // progress logging
-                    outputStream.write(receivedPacket.getData(), 0, receivedPacket.getLength());
+                    outputStream.write(receivedDatagram.getData(), 0, receivedDatagram.getLength());
                     startOffset = endOffset; // start offset of next packet will be end offset of current packet,
                     // offsets are relative to the file not the buffer
                 }
@@ -78,5 +71,32 @@ public class Receiver {// Server
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void makeAndSendPacket(int endOffset, DatagramSocket serverSocket, DatagramPacket receivedDatagram) throws IOException {
+        Packet packetToSend = new Packet(
+                GOOD_CHECKSUM,
+                (short) receivedDatagram.getLength(),
+                receivedDatagram.getData()[receivedDatagram.getLength() - 1],
+                endOffset,
+                receivedDatagram.getData());
+        System.out.println("ack to be sent: " + packetToSend.getAck());
+
+        byte[] packetAsBytes = convertPacketToByteArray(packetToSend);
+
+        // Send the packet data back to the client as the ack
+        DatagramPacket datagramWithAck = new DatagramPacket(
+                packetAsBytes,
+                packetAsBytes.length,
+                receivedDatagram.getAddress(),
+                receivedDatagram.getPort());
+        serverSocket.send(datagramWithAck);
+    }
+
+    private static byte[] convertPacketToByteArray(Packet packet) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+        objectOutputStream.writeObject(packet);
+        return byteArrayOutputStream.toByteArray();
     }
 }

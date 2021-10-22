@@ -1,6 +1,3 @@
-import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Objects;
 
 public class SenderUtil {
@@ -104,4 +101,24 @@ public class SenderUtil {
         System.exit(1);
     }
 
+    protected static Object convertByteArrayToPacket(byte[] bytes) throws IOException, ClassNotFoundException {
+
+        Object obj = null;
+        ByteArrayInputStream bis = null;
+        ObjectInputStream ois = null;
+        try {
+            bis = new ByteArrayInputStream(bytes);
+            ois = new ObjectInputStream(bis);
+            obj = ois.readObject();
+
+        } finally {
+            if (bis != null) {
+                bis.close();
+            }
+            if (ois != null) {
+                ois.close();
+            }
+        }
+        return obj;
+    }
 }
