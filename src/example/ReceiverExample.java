@@ -1,79 +1,52 @@
 package example;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.*;
+import java.net.*;
+import java.nio.*;
+import java.util.*;
 
-public class ReceiverExample {
-    ServerSocket reciever;
-    Socket connection = null;
-    ObjectOutputStream out;
-    ObjectInputStream in;
-    String packet, ack;
-    StringBuilder data = new StringBuilder("");
-    int i = 0, sequence = 0;
+class ReceiverExample {
+    private static final int BUFFER_SIZE = 1024;
+    private static final int PORT = 6789;
 
-    ReceiverExample() {
-    }
+    public static void main(String[] args) throws IOException {
+        // Create a server socket
+        DatagramSocket serverSocket = new DatagramSocket(PORT);
 
-    public void run() {
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-            reciever = new ServerSocket(8080, 10);
-            System.out.println("waiting for connection...");
-            connection = reciever.accept();
-            sequence = 0;
-            System.out.println("Connection established   :");
-            out = new ObjectOutputStream(connection.getOutputStream());
-            out.flush();
-            in = new ObjectInputStream(connection.getInputStream());
-            out.writeObject("connected    .");
+        // Set up byte arrays for sending/receiving data
+        byte[] receiveData = new byte[BUFFER_SIZE];
+        byte[] dataToSend;
 
-            do {
-                try {
-                    packet = (String) in.readObject();
-                    if (Integer.parseInt(packet.substring(0, 1)) == sequence) {
-                        data.append(packet.substring(1));
-                        if (sequence == 0) {
-                            sequence = 1;
-                        }
-                        else {
-                            sequence = 0;
-                        }
-                        System.out.println("\n\nreceiver         >" + packet);
-                    } else {
-                        System.out.println("\n\nreceiver         >" + packet + "   duplicate data");
-                    }
-                    if (i < 3) {
-                        out.writeObject(String.valueOf(sequence));
-                        i++;
-                    } else {
-                        out.writeObject(String.valueOf((sequence + 1) % 2));
-                        i = 0;
-                    }
-                } catch (Exception e) {
-                }
-            } while (!packet.equals("end"));
-            System.out.println("Data recived=" + data);
-            out.writeObject("connection ended    .");
-        } catch (Exception e) {
-        } finally {
-            try {
-                in.close();
-                out.close();
-                reciever.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+        // Infinite loop to check for connections
+        while (true) {
+
+            // Get the received packet
+            DatagramPacket receivedPacket = new DatagramPacket(receiveData, receiveData.length);
+            serverSocket.receive(receivedPacket);
+
+            // Get the message from the packet
+            int message = ByteBuffer.wrap(receivedPacket.getData()).getInt();
+
+            Random random = new Random();
+            int chance = random.nextInt(100);
+
+            // 1 in 2 chance of responding to the message
+            if (((chance % 2) == 0)) {
+                System.out.println("FROM CLIENT: " + message);
+
+                // Get packet's IP and port
+                InetAddress IPAddress = receivedPacket.getAddress();
+                int port = receivedPacket.getPort();
+
+                // Convert message to uppercase
+                dataToSend = ByteBuffer.allocate(4).putInt(message).array();
+
+                // Send the packet data back to the client
+                DatagramPacket packetToSend = new DatagramPacket(dataToSend, dataToSend.length, IPAddress, port);
+                serverSocket.send(packetToSend);
+            } else {
+                System.out.println("Oops, packet with sequence number " + message + " was dropped");
             }
         }
-    }
-
-    public static void main(String args[]) {
-        ReceiverExample s = new ReceiverExample();
-            s.run();
-
     }
 }
