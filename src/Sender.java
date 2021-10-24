@@ -3,12 +3,13 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 
 public class Sender extends SenderUtil {// Client
 
     // Steps to use:
     // (first time) javac Sender.java
-    // java Sender localhost 8080 image.png 16
+    // java Sender localhost 8080 image.png
 
     // main
     public static void main(String[] args) {
@@ -30,6 +31,7 @@ public class Sender extends SenderUtil {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
+            System.out.println("(int) file.length(): " + (int) file.length());
             packetSize = (int) file.length() / numOfFrames++;
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
@@ -70,22 +72,20 @@ public class Sender extends SenderUtil {// Client
                         DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
                         serverSocket.receive(receivedPacket);
 
-                        Packet packetFromServer = (Packet) convertByteArrayToPacket(receivedPacket.getData());
-
-                        System.out.println("Ack from server: " + packetFromServer.getAck());
+                        int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
 
                         // Check ack from server
-                        if (packetFromServer.getAck() == startOffset) {
+                        if (ackFromReceiver == startOffset) {
                             break;
                         }
-                        System.out.println("Ack not received");
+                        System.out.println("correct ack not received");
                     }
                 }
             } while (true);
             // done, close streams/sockets
             inputStream.close();
             serverSocket.close();
-        } catch (FileNotFoundException | ClassNotFoundException ex) {
+        } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
         } catch (IOException ex) {
             ex.printStackTrace();

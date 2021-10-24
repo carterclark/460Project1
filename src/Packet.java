@@ -54,4 +54,13 @@ public class Packet implements Serializable {
     public void setData(byte[] data) {
         this.data = data;
     }
+
+    @Override
+    public String toString() {
+        return "checkSum: " + checkSum
+                + ", length: " + length
+                + ", ack: " + ack
+                + ", seqNo: " + seqNo
+                + ", data.length: " + data.length;
+    }
 }

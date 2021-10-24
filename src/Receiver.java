@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
 
 public class Receiver {// Server
 
-    private static byte[] dataToReceive = new byte[4096];
+    private static final int MAX_PACKET_SIZE = 4096; // default buffer will send the data in 4K chunks
+
+    private static byte[] dataToReceive = new byte[MAX_PACKET_SIZE];
     private static final short GOOD_CHECKSUM = 0;
     private static final short BAD_CHECKSUM = 1;
 
@@ -40,8 +43,6 @@ public class Receiver {// Server
                 // endOffset accumulates with length of data in packet, offsets are
                 // relative to the file not the buffer
                 endOffset += receivedDatagram.getLength();
-                System.out.println("length: " + receivedDatagram.getLength()
-                        + "\nendOffset" + endOffset);
 
                 // Make packet
                 makeAndSendPacket((int) endOffset, serverSocket, receivedDatagram);
@@ -61,7 +62,7 @@ public class Receiver {// Server
                     // offsets are relative to the file not the buffer
                 }
 
-                dataToReceive = new byte[4096]; // flush buffer
+                dataToReceive = new byte[MAX_PACKET_SIZE]; // flush buffer
             }
 
             // done, close sockets/streams
@@ -80,23 +81,27 @@ public class Receiver {// Server
                 receivedDatagram.getData()[receivedDatagram.getLength() - 1],
                 endOffset,
                 receivedDatagram.getData());
-        System.out.println("ack to be sent: " + packetToSend.getAck());
 
         byte[] packetAsBytes = convertPacketToByteArray(packetToSend);
 
         // Send the packet data back to the client as the ack
         DatagramPacket datagramWithAck = new DatagramPacket(
-                packetAsBytes,
-                packetAsBytes.length,
+                ByteBuffer.allocate(4).putInt(endOffset).array(),
+                ByteBuffer.allocate(4).putInt(endOffset).array().length,
                 receivedDatagram.getAddress(),
                 receivedDatagram.getPort());
         serverSocket.send(datagramWithAck);
     }
 
     private static byte[] convertPacketToByteArray(Packet packet) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
-        objectOutputStream.writeObject(packet);
-        return byteArrayOutputStream.toByteArray();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        out.writeObject(packet);
+        byte[] bytesToSend = bos.toByteArray();
+        out.close();
+        bos.close();
+
+        return bytesToSend;
     }
 }
