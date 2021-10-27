@@ -1,10 +1,19 @@
+import java.io.Serializable;
 
-public class Packet {
-    short checkSum; // 16-bit 2-byte
-    short length; // 16-bit 2-byte
-    int ack; // 32-bit 4-byte
-    int seqNo; // 32-bit 4-byte Data packet Only
-    byte[] data; // 0-500 bytes. Data packet only. Variable
+public class Packet implements Serializable {
+    private short checkSum; // 16-bit 2-byte
+    private short length; // 16-bit 2-byte
+    private int ack; // 32-bit 4-byte
+    private int seqNo; // 32-bit 4-byte Data packet Only
+    private byte[] data; // 0-500 bytes. Data packet only. Variable
+
+    public Packet(short checkSum, short length, int ack, int seqNo, byte[] data) {
+        this.checkSum = checkSum;
+        this.length = length;
+        this.ack = ack;
+        this.seqNo = seqNo;
+        this.data = data;
+    }
 
     public short getCheckSum() {
         return checkSum;
@@ -44,5 +53,14 @@ public class Packet {
 
     public void setData(byte[] data) {
         this.data = data;
+    }
+
+    @Override
+    public String toString() {
+        return "checkSum: " + checkSum
+                + ", length: " + length
+                + ", ack: " + ack
+                + ", seqNo: " + seqNo
+                + ", data.length: " + data.length;
     }
 }

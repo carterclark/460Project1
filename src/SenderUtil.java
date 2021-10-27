@@ -1,13 +1,13 @@
-import java.awt.*;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.*;
+import java.net.DatagramSocket;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class SenderUtil {
     protected static String receiverAddress = "";
     protected static String inputFile = "";
     protected static double dataGrams = 0.0;
-    protected static int numOfFrames = 1;
+    protected static int numOfFrames = 15;
     protected static int maxPacketSize = 4096; // default buffer will send the data in 4K chunks
     protected static int packetSize = maxPacketSize / numOfFrames;
     protected static int timeOut = 300; // default timeout
@@ -69,19 +69,16 @@ public class SenderUtil {
                 // receiver port
                 // must have at minimum the filename, the receiver address, and the receiver
                 // port
-                if (i == (args.length - 4)) {
+                if (i == (args.length - 3)) {
                     receiverAddress = args[i];
                 }
 
-                if (i == (args.length - 3)) {
+                if (i == (args.length - 2)) {
                     receiverPort = Integer.parseInt(args[i]);
                 }
 
-                if (i == (args.length - 2)) {
-                    inputFile = args[i];
-                }
                 if (i == (args.length - 1)) {
-                    numOfFrames = Integer.parseInt(args[i]) - 1;
+                    inputFile = args[i];
                 }
                 i++;
             }
