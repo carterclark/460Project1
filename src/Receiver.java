@@ -48,12 +48,7 @@ public class Receiver {// Server
 				// endOffset accumulates with length of data in packet, offsets are
 				// relative to the file not the buffer
 				endOffset += receivedDatagram.getLength();
-
-				// =======================================
 				int simulateErrorRng = rngErrorGenerator();
-				System.out.println("\n\t\t\tsimulateErrorRng = " + simulateErrorRng);
-				System.out.println("\t\t\tPrevious Ack = " + previousAck);
-				
 				
 				// Simulating possible errors or success
 				if (simulateErrorRng == 1) { // corrupted
@@ -70,8 +65,6 @@ public class Receiver {// Server
 					
 					previousAck = (int) endOffset;
 				}
-
-				// =======================================
 				
 				// send checksum
 				makeAndSendShort(GOOD_CHECKSUM, serverSocket, receivedDatagram.getAddress(),
@@ -123,18 +116,12 @@ public class Receiver {// Server
 		}
 	}
 
-	// =====================================
-	// =====================================
-
 	private static void makeAndSendInt(int data, DatagramSocket serverSocket, InetAddress inetAddress, int port ) throws IOException {
 		// Send the integer data back to the client as bytes
 		DatagramPacket datagramWithAck = new DatagramPacket(ByteBuffer.allocate(4).putInt(data).array(),
 				ByteBuffer.allocate(4).putInt(data).array().length, inetAddress, port);
 		serverSocket.send(datagramWithAck);
 	}
-
-	// =====================================
-	// =====================================
 
 	private static void makeAndSendShort(short data, DatagramSocket serverSocket, InetAddress inetAddress, int port)
 			throws IOException {
