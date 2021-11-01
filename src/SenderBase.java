@@ -4,6 +4,11 @@ import java.net.DatagramSocket;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+/**
+ * On the sender side, we have to simulate sending bad amounts of data
+ * as well. 
+ *
+ */
 public class SenderBase {
     protected static String receiverAddress = "";
     protected static String inputFile = "";
@@ -14,6 +19,9 @@ public class SenderBase {
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
 
+    // Testing
+    long previousAck = 0;
+    
     protected FileInputStream inputStream;
     protected File file;
 
@@ -104,17 +112,26 @@ public class SenderBase {
 
     protected void validateAckFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long startOffset) throws IOException {
         while (true) {
+        	System.out.println("\t\t\t\tPrevious ack = " + previousAck);
+        	
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
             serverSocket.receive(receivedPacket);
 
             int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-
+            System.out.println("\t\t\t\tAck from Receiver = " + ackFromReceiver);
             // Check ack from server
             if (ackFromReceiver == startOffset) {
+            	previousAck = startOffset;
                 break;
+            } else if (ackFromReceiver != startOffset && ackFromReceiver == 1){ // Corrupted Ack
+                System.out.println("received " + ackFromReceiver + " as ack, need to resend");            	
+                System.out.println("Corrupted Ack");
+                break;
+            } else if (ackFromReceiver == previousAck) { // Duplicate Ack
+            	System.out.println("Duplicate Ack");
+            	break;
             }
-            System.out.println("received " + ackFromReceiver + " as ack, need to resend");
         }
     }
 
