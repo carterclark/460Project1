@@ -5,10 +5,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
-public class Sender extends SenderUtil {// Client
+public class Sender extends SenderBase {// Client
 
     // Steps to use:
-    // (first time) javac Sender.java
+    // javac Sender.java
     // java Sender localhost 8080 image.png
 
     // main
@@ -17,7 +17,7 @@ public class Sender extends SenderUtil {// Client
         sender.run(args);
     }
 
-    private void run(String[] args) {
+    private void run(String[] args){
         InetAddress address;
         DatagramSocket serverSocket;
 
@@ -31,13 +31,12 @@ public class Sender extends SenderUtil {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
-            System.out.println("(int) file.length(): " + (int) file.length());
             packetSize = (int) file.length() / numOfFrames++;
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             serverSocket = new DatagramSocket(); // Instantiate the datagram socket
             byte[] dataToSend = new byte[packetSize]; // create the "send" buffer
-            byte[] dataToReceive = new byte[packetSize]; // create the "receive" buffer
+            byte[] dataToReceive = new byte[maxPacketSize]; // create the "receive" buffer
 
             // logging counters/variables
             int packetCount = 0;
@@ -67,19 +66,21 @@ public class Sender extends SenderUtil {// Client
                     serverSocket.send(packetToSend);
                     dataToSend = new byte[packetSize]; // flush buffer
 
-                    while (true) {
-                        // Receive the server's packet
-                        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-                        serverSocket.receive(receivedPacket);
+                    //get ack from receiver
+                    validateAckFromReceiver(serverSocket, dataToReceive, startOffset);
 
-                        int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
+                    //get checkSum from receiver
+                    validateCheckSumFromReceiver(serverSocket, dataToReceive);
 
-                        // Check ack from server
-                        if (ackFromReceiver == startOffset) {
-                            break;
-                        }
-                        System.out.println("correct ack not received");
-                    }
+                    //get len from receiver
+                    validateLenFromReceiver(serverSocket, dataToReceive, packetToSend.getLength());
+
+                    //get sequence number from receiver
+                    validateSequenceFromReceiver(serverSocket, dataToReceive, packetCount);
+
+                    //get packet from receiver
+//                    getPacketFromReceiver(serverSocket, dataToReceive); TODO: get this to work!!
+
                 }
             } while (true);
             // done, close streams/sockets

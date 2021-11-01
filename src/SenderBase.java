@@ -1,9 +1,10 @@
 import java.io.*;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class SenderUtil {
+public class SenderBase {
     protected static String receiverAddress = "";
     protected static String inputFile = "";
     protected static double dataGrams = 0.0;
@@ -101,4 +102,84 @@ public class SenderUtil {
         System.exit(1);
     }
 
+    protected void validateAckFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long startOffset) throws IOException {
+        while (true) {
+            // Receive the server's packet
+            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+            serverSocket.receive(receivedPacket);
+
+            int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
+
+            // Check ack from server
+            if (ackFromReceiver == startOffset) {
+                break;
+            }
+            System.out.println("received " + ackFromReceiver + " as ack, need to resend");
+        }
+    }
+
+    protected void validateCheckSumFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
+        while (true) {
+            // Receive the server's packet
+            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+            serverSocket.receive(receivedPacket);
+
+            short checkSum = ByteBuffer.wrap(receivedPacket.getData()).getShort();
+
+            // check for 0 from server
+            if (checkSum == 0) {
+                break;
+            }
+            System.out.println("received " + checkSum + " as a checksum, need to resend");
+        }
+    }
+
+    protected void validateLenFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderLen) throws IOException {
+        while (true) {
+            // Receive the server's packet
+            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+            serverSocket.receive(receivedPacket);
+
+            int lenFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
+
+            // Check len from server
+            if (lenFromReceiver == senderLen) {
+                break;
+            }
+            System.out.println("received " + senderLen + " as len, need to resend");
+        }
+    }
+
+    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderSequence) throws IOException {
+        while (true) {
+            // Receive the server's packet
+            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+            serverSocket.receive(receivedPacket);
+
+            int receiverSequence = ByteBuffer.wrap(receivedPacket.getData()).getInt();
+
+            // Check ack from server
+            if (receiverSequence == senderSequence) {
+                break;
+            }
+            System.out.println("received " + receiverSequence + " as sequence number, need to resend");
+        }
+    }
+
+    protected void getPacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
+        // Receive the server's packet
+        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+        serverSocket.receive(receivedPacket);
+        Packet packet = null;
+
+        try {
+            packet = Utility.convertByteArrayToPacket(receivedPacket.getData());
+            System.out.println("Past conversion");
+        } catch (ClassNotFoundException e) {
+            System.out.println("Class not found exception");
+            e.printStackTrace();
+        }
+
+        System.out.println("Made it: " + packet);
+    }
 }
