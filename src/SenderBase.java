@@ -4,6 +4,11 @@ import java.net.DatagramSocket;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
+/**
+ * On the sender side, we have to simulate sending bad amounts of data
+ * as well. 
+ *
+ */
 public class SenderBase {
     protected static String receiverAddress = "";
     protected static String inputFile = "";
@@ -14,6 +19,9 @@ public class SenderBase {
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
 
+    // Testing
+    long previousStartOffset = 0;
+    
     protected FileInputStream inputStream;
     protected File file;
 
@@ -109,12 +117,18 @@ public class SenderBase {
             serverSocket.receive(receivedPacket);
 
             int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-
+            
             // Check ack from server
             if (ackFromReceiver == startOffset) {
+            	previousStartOffset = startOffset;
                 break;
-            }
-            System.out.println("received " + ackFromReceiver + " as ack, need to resend");
+            } else if (ackFromReceiver == previousStartOffset) { // Duplicate Ack
+            	System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver" );
+            	break;
+            } else { // Corrupted Ack          	
+                System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
+                break;
+            } 
         }
     }
 
