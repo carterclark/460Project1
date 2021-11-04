@@ -20,7 +20,6 @@ public class SenderBase {
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
 
-    // Testing
     long previousStartOffset = 0;
     protected FileInputStream inputStream;
     protected File file;
