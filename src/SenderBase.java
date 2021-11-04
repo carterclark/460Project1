@@ -5,8 +5,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Objects;
+
+import javax.xml.crypto.Data;
 
 /**
  * On the sender side, we have to simulate sending bad amounts of data as well.
@@ -146,7 +149,7 @@ public class SenderBase {
                 break;
             } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
                 System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
-                serverSocket.send(packetToSend);
+                serverSocket.send(makeStringDatagram("error", receivedPacket));
                 validateAckFromReceiver(serverSocket, dataToReceive);
                 break;
             } else if (ackFromReceiver == 1) { // Corrupted Ack
@@ -212,5 +215,10 @@ public class SenderBase {
         System.out.printf("Packet:%d:%d - Start Byte Offset:%d"
                 + " - End Byte Offset: %d - Sent time:%d - " + senderCondition + "\n",
             packetCount++, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
+    }
+
+    protected DatagramPacket makeStringDatagram(String stringToSend, DatagramPacket receivedPacket){
+        byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
+        return new DatagramPacket(data, data.length, receivedPacket.getAddress(), receivedPacket.getPort());
     }
 }
