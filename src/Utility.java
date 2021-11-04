@@ -2,6 +2,11 @@ import java.io.*;
 
 public class Utility {
 
+    public static int rngErrorGenerator() {
+        // Gives a random number between 1-50
+        return (int) Math.floor(Math.random() * (50 + 1) + 1);
+    }
+
     public static byte[] convertPacketToByteArray(Packet packet) throws IOException {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

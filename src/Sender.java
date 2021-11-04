@@ -1,25 +1,25 @@
-
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
-public class Sender extends SenderBase {// Client
+public class Sender extends SenderBase
+{// Client
 
     // Steps to use:
     // javac Sender.java
     // java Sender localhost 8080 image.png
 
     // main
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         Sender sender = new Sender();
         sender.run(args);
     }
 
-    private void run(String[] args){
-        InetAddress address;
-        DatagramSocket serverSocket;
+    private void run(String[] args)
+    {
 
         // verify there are at least three parameters being passed in
         if (args.length < 3) {
@@ -35,13 +35,12 @@ public class Sender extends SenderBase {// Client
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             serverSocket = new DatagramSocket(); // Instantiate the datagram socket
-            byte[] dataToSend = new byte[packetSize]; // create the "send" buffer
+            dataToSend = new byte[packetSize]; // create the "send" buffer
             byte[] dataToReceive = new byte[maxPacketSize]; // create the "receive" buffer
 
             // logging counters/variables
             int packetCount = 0;
-            int bytesRead;
-            long startOffset = 0;
+            startOffset = 0;
             long endOffset = 0;
 
             System.out.println("\nSENDING FILE\n");
@@ -58,16 +57,15 @@ public class Sender extends SenderBase {// Client
                 } else {
                     endOffset += bytesRead;
                     System.out.format("Packet: %4d  :%4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n",
-                            ++packetCount, numOfFrames, startOffset, endOffset);
+                        ++packetCount, numOfFrames, startOffset, endOffset);
                     startOffset = endOffset;
 
                     // create and send the packet
-                    DatagramPacket packetToSend = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
+                    packetToSend = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
                     serverSocket.send(packetToSend);
-                    dataToSend = new byte[packetSize]; // flush buffer
 
                     //get ack from receiver
-                    validateAckFromReceiver(serverSocket, dataToReceive, startOffset);
+                    validateAckFromReceiver(serverSocket, dataToReceive);
 
                     //get checkSum from receiver
                     validateCheckSumFromReceiver(serverSocket, dataToReceive);
@@ -78,8 +76,8 @@ public class Sender extends SenderBase {// Client
                     //get sequence number from receiver
                     validateSequenceFromReceiver(serverSocket, dataToReceive, packetCount);
 
-                    //get packet from receiver
-//                    getPacketFromReceiver(serverSocket, dataToReceive); TODO: get this to work!!
+                    dataToSend = new byte[packetSize]; // flush buffer
+                    packetToSend = null; // flush packet
 
                 }
             } while (true);
