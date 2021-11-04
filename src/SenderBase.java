@@ -134,10 +134,14 @@ public class SenderBase {
                 break;
             } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
                 System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
-                System.exit(500);
+                //todo send error signal to receiver. String that says "error"
+                System.exit(500); //todo here: call validateAckFromReceiver method again
+                // Carter
             } else if (ackFromReceiver == 1) { // Corrupted Ack
                 System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
-                System.exit(500);
+                //todo send error signal to receiver
+                System.exit(500); //todo here: call validateAckFromReceiver method again
+                // Tyler
             }
         }
     }
@@ -154,7 +158,7 @@ public class SenderBase {
             if (checkSum == 0) {
                 break;
             }
-            System.out.println("received " + checkSum + " as a checksum, need to resend");
+            System.out.println("received " + checkSum + " as a checksum");
         }
     }
 

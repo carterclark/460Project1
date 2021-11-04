@@ -12,6 +12,8 @@ public class Receiver
     private static byte[] dataToReceive = new byte[MAX_PACKET_SIZE];
     private static final short GOOD_CHECKSUM = 0;
     private static final short BAD_CHECKSUM = 1;
+    private static DatagramSocket serverSocket;
+    private static DatagramPacket receivedDatagram;
 
     // Mitch Testing
     static int previousAck = 0;
@@ -35,15 +37,16 @@ public class Receiver
         }
         try {
             // initialize socket and create output stream
-            DatagramSocket serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
+            serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
 
             System.out.println("\nWAITING FOR FILE\n");
             while (true) {
-                DatagramPacket receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
+                receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
                 serverSocket.receive(receivedDatagram); // wait for a start packet
 
-                //check if error from sender side
-
+                if(errorInData()){
+                    errorFromSender();
+                }
 
                 // endOffset accumulates with length of data in packet, offsets are
                 // relative to the file not the buffer
@@ -89,6 +92,18 @@ public class Receiver
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean errorInData(){
+        // todo check if data in received datagram is any of the error signals
+        // Raika
+        return false;
+    }
+
+    private static void errorFromSender(){
+        // todo make method to send back to sender
+        // todo re-receive packet and confirm it's not error signal, if it is, then kill program
+        // Kenny
     }
 
     private static void makeAndSendAck(int data, DatagramSocket serverSocket, InetAddress inetAddress, int port)
