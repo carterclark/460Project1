@@ -1,13 +1,14 @@
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * On the sender side, we have to simulate sending bad amounts of data
- * as well. 
- *
+ * On the sender side, we have to simulate sending bad amounts of data as well.
  */
 public class SenderBase {
     protected static String receiverAddress = "";
@@ -21,17 +22,25 @@ public class SenderBase {
 
     // Testing
     long previousStartOffset = 0;
-    
     protected FileInputStream inputStream;
     protected File file;
+
+    // for sending packets
+    protected InetAddress address;
+    protected DatagramSocket serverSocket;
+    protected DatagramPacket packetToSend;
+    protected byte[] dataToSend;
+    protected int bytesRead;
+    protected long startOffset;
 
     // parse the command line parameters
     protected static void ParseCmdLine(String[] args) {
         int i = 0;
         String arg;
 
-        if (args.length < 3)
+        if (args.length < 3) {
             Usage(); // run with no parameters or too few to see usage message
+        }
 
         while (i < args.length) {
             arg = args[i];
@@ -95,8 +104,9 @@ public class SenderBase {
 
         // if values were not provided on commandline the defaults will trigger a usage
         // message
-        if (Objects.equals(inputFile, "") || Objects.equals(receiverAddress, "") | receiverPort == 0)
+        if (Objects.equals(inputFile, "") || Objects.equals(receiverAddress, "") | receiverPort == 0) {
             Usage();
+        }
     }
 
     // directions for use
@@ -110,25 +120,26 @@ public class SenderBase {
         System.exit(1);
     }
 
-    protected void validateAckFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long startOffset) throws IOException {
+    protected void validateAckFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
+
         while (true) {
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
             serverSocket.receive(receivedPacket);
 
             int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-            
+
             // Check ack from server
-            if (ackFromReceiver == startOffset) {
-            	previousStartOffset = startOffset;
+            if (ackFromReceiver == startOffset) { // Good ack
+                previousStartOffset = startOffset;
                 break;
-            } else if (ackFromReceiver == previousStartOffset) { // Duplicate Ack
-            	System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver" );
-            	break;
-            } else { // Corrupted Ack          	
+            } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
+                System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
+                System.exit(500);
+            } else if (ackFromReceiver == 1) { // Corrupted Ack
                 System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
-                break;
-            } 
+                System.exit(500);
+            }
         }
     }
 
@@ -148,7 +159,8 @@ public class SenderBase {
         }
     }
 
-    protected void validateLenFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderLen) throws IOException {
+    protected void validateLenFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderLen)
+            throws IOException {
         while (true) {
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
@@ -160,11 +172,12 @@ public class SenderBase {
             if (lenFromReceiver == senderLen) {
                 break;
             }
-            System.out.println("received " + senderLen + " as len, need to resend");
+            System.out.println("received " + senderLen + " as length");
         }
     }
 
-    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderSequence) throws IOException {
+    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderSequence)
+            throws IOException {
         while (true) {
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
@@ -176,7 +189,7 @@ public class SenderBase {
             if (receiverSequence == senderSequence) {
                 break;
             }
-            System.out.println("received " + receiverSequence + " as sequence number, need to resend");
+            System.out.println("Error: received " + receiverSequence + " as sequence number");
         }
     }
 
