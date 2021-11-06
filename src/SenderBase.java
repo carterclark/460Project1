@@ -152,6 +152,7 @@ public class SenderBase {
                 serverSocket.send(makeStringDatagram("error", receivedPacket));
                 validateAckFromReceiver(serverSocket, dataToReceive);
                 break;
+
             } else if (ackFromReceiver == 1) { // Corrupted Ack
                 System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
                 //todo send error signal to receiver

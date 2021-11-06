@@ -89,8 +89,7 @@ public class Receiver
 
     private static boolean errorInData(){
         // todo check if data in received datagram is any of the error signals
-        // Raika
-        return false;
+        return (new String(receivedDatagram.getData()).trim().equals("error"));
     }
 
     private static void errorFromSender(){
