@@ -135,6 +135,9 @@ public class SenderBase {
             } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
                 System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
                 //todo send error signal to receiver. String that says "error"
+                dataToSend = "error".getBytes();
+                DatagramPacket datagramPacket = new DatagramPacket(dataToSend, 5, address, receiverPort);
+                serverSocket.send(datagramPacket);
                 System.exit(500); //todo here: call validateAckFromReceiver method again
                 // Carter
             } else if (ackFromReceiver == 1) { // Corrupted Ack
