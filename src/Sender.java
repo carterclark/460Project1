@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
 
 public class Sender extends SenderBase
 {// Client
@@ -39,12 +38,13 @@ public class Sender extends SenderBase
             byte[] dataToReceive = new byte[maxPacketSize]; // create the "receive" buffer
 
             // logging counters/variables
-            int packetCount = 0;
+            packetCount = 0;
             startOffset = 0;
             long endOffset = 0;
 
             System.out.println("\nSENDING FILE\n");
             do {
+                startTime = System.currentTimeMillis();
                 // read the input file in packetSize chunks, and send them to the server
                 bytesRead = inputStream.read(dataToSend);
                 if (bytesRead == -1) {
@@ -56,24 +56,17 @@ public class Sender extends SenderBase
                     break;
                 } else {
                     endOffset += bytesRead;
-                    System.out.format("Packet: %4d  :%4d  -  Start Byte Offset: %8d  -  End Byte Offset: %8d%n",
-                        ++packetCount, numOfFrames, startOffset, endOffset);
+                    printSenderInfo(endOffset, SENT);
                     startOffset = endOffset;
 
                     // create and send the packet
                     packetToSend = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
                     serverSocket.send(packetToSend);
 
-                    //get ack from receiver
+                    //get acknowledgements from receiver
                     validateAckFromReceiver(serverSocket, dataToReceive);
-
-                    //get checkSum from receiver
                     validateCheckSumFromReceiver(serverSocket, dataToReceive);
-
-                    //get len from receiver
                     validateLenFromReceiver(serverSocket, dataToReceive, packetToSend.getLength());
-
-                    //get sequence number from receiver
                     validateSequenceFromReceiver(serverSocket, dataToReceive, packetCount);
 
                     dataToSend = new byte[packetSize]; // flush buffer

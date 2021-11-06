@@ -5,12 +5,24 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Objects;
+
+import javax.xml.crypto.Data;
 
 /**
  * On the sender side, we have to simulate sending bad amounts of data as well.
  */
 public class SenderBase {
+    protected static final String SENT = "SENT";
+    protected static final String DROP = "DROP";
+    protected static final String ERR = "ERR";
+
+    protected static final String DUPLICATE_ACK = "DuplAck";
+    protected static final String ERROR_ACK = "ErrAck";
+    protected static final String TIMEOUT = "TimeOut";
+
     protected static String receiverAddress = "";
     protected static String inputFile = "";
     protected static double dataGrams = 0.0;
@@ -19,6 +31,8 @@ public class SenderBase {
     protected static int packetSize = maxPacketSize / numOfFrames;
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
+    protected long startTime;
+    protected String datagramCondition;
 
     long previousStartOffset = 0;
     protected FileInputStream inputStream;
@@ -31,6 +45,7 @@ public class SenderBase {
     protected byte[] dataToSend;
     protected int bytesRead;
     protected long startOffset;
+    protected int packetCount;
 
     // parse the command line parameters
     protected static void ParseCmdLine(String[] args) {
@@ -134,12 +149,10 @@ public class SenderBase {
                 break;
             } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
                 System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
-                //todo send error signal to receiver. String that says "error"
-                dataToSend = "error".getBytes();
-                DatagramPacket datagramPacket = new DatagramPacket(dataToSend, 5, address, receiverPort);
-                serverSocket.send(datagramPacket);
-                System.exit(500); //todo here: call validateAckFromReceiver method again
-                // Carter
+                serverSocket.send(makeStringDatagram("error", receivedPacket));
+                validateAckFromReceiver(serverSocket, dataToReceive);
+                break;
+
             } else if (ackFromReceiver == 1) { // Corrupted Ack
                 System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
                 //todo send error signal to receiver
@@ -190,7 +203,6 @@ public class SenderBase {
             serverSocket.receive(receivedPacket);
 
             int receiverSequence = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-
             // Check ack from server
             if (receiverSequence == senderSequence) {
                 break;
@@ -199,20 +211,15 @@ public class SenderBase {
         }
     }
 
-    protected void getPacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
-        // Receive the server's packet
-        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-        serverSocket.receive(receivedPacket);
-        Packet packet = null;
+    protected void printSenderInfo(long endOffset, String senderCondition)
+    {
+        System.out.printf("Packet:%d:%d - Start Byte Offset:%d"
+                + " - End Byte Offset: %d - Sent time:%d - " + senderCondition + "\n",
+            packetCount++, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
+    }
 
-        try {
-            packet = Utility.convertByteArrayToPacket(receivedPacket.getData());
-            System.out.println("Past conversion");
-        } catch (ClassNotFoundException e) {
-            System.out.println("Class not found exception");
-            e.printStackTrace();
-        }
-
-        System.out.println("Made it: " + packet);
+    protected DatagramPacket makeStringDatagram(String stringToSend, DatagramPacket receivedPacket){
+        byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
+        return new DatagramPacket(data, data.length, receivedPacket.getAddress(), receivedPacket.getPort());
     }
 }

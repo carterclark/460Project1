@@ -52,18 +52,11 @@ public class Receiver
                 // relative to the file not the buffer
                 endOffset += receivedDatagram.getLength();
 
-                // Send ack with or without errors
+                // Send acknowledgements
                 makeAndSendAck((int) endOffset, serverSocket, receivedDatagram.getAddress(),
                     receivedDatagram.getPort());
-
-                // send checksum
                 makeAndSendCheckSum(serverSocket, receivedDatagram.getAddress(), receivedDatagram.getPort());
-
-                // send len
-                makeAndSendLen(receivedDatagram.getLength(), serverSocket, receivedDatagram.getAddress(),
-                    receivedDatagram.getPort());
-
-                // send sequence number
+                makeAndSendLen(receivedDatagram.getLength(), serverSocket, receivedDatagram.getAddress(), receivedDatagram.getPort());
                 makeAndSendSeq(packetCount, serverSocket, receivedDatagram.getAddress(), receivedDatagram.getPort());
 
                 if (new String(receivedDatagram.getData()).trim().equals("end")) {
