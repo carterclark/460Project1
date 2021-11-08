@@ -3,13 +3,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import objects.Packet;
+
+import static util.Utility.GOOD_CHECKSUM;
 import static util.Utility.SENT;
+import static util.Utility.convertPacketToByteArray;
+import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
-    // Steps to use:
-    // javac Sender.java
-    // java Sender localhost 8080 image.png
 
     // main
     public static void main(String[] args) {
@@ -29,16 +31,16 @@ public class Sender extends SenderBase {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
-            packetSize = (int) file.length() / numOfFrames++;
+            dataSize = (int) file.length() / numOfFrames++;
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             serverSocket = new DatagramSocket(); // Instantiate the datagram socket
-            dataToSend = new byte[packetSize]; // create the "send" buffer
-            byte[] dataToReceive = new byte[packetSize]; // create the "receive" buffer
+            dataToSend = new byte[dataSize]; // create the "send" buffer
+            byte[] dataToReceive = new byte[dataSize]; // create the "receive" buffer
 
             // logging counters/variables
             packetCount = 1;
-            startOffset = 0;
+            previousOffset = 0;
             long endOffset = 0;
 
             System.out.println("\nSENDING FILE\n");
@@ -49,24 +51,29 @@ public class Sender extends SenderBase {// Client
                 if (bytesRead == -1) {
                     // end of file, tell the receiver that we are done sending
                     dataToSend = "end".getBytes();
-                    DatagramPacket datagramPacket = new DatagramPacket(dataToSend, 3, address, receiverPort);
+                    DatagramPacket datagramPacket =
+                        new DatagramPacket(dataToSend, dataToSend.length, address, receiverPort);
                     serverSocket.send(datagramPacket);
                     System.out.println("Sent end packet.  Terminating.");
                     break;
                 } else {
                     endOffset += bytesRead;
                     printSenderInfo(endOffset, SENT);
-                    startOffset = endOffset;
 
-                    // create and send the packet
-                    datagramPacketToSend = new DatagramPacket(dataToSend, dataToSend.length, address, receiverPort);
+                    // sending as packet object
+                    byte[] packetDataToSend = convertPacketToByteArray(
+                        new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataToSend));
+                    datagramPacketToSend =
+                        new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
                     serverSocket.send(datagramPacketToSend);
 
                     //get acknowledgements from receiver
-                    validatePacketFromReceiver(serverSocket, dataToReceive);
+                    validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                        packetCount);
 
+                    previousOffset = endOffset;
                     packetCount++;
-                    dataToSend = new byte[packetSize]; // flush buffer
+                    dataToSend = new byte[dataSize]; // flush buffer
                     datagramPacketToSend = null; // flush packet
 
                 }

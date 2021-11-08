@@ -19,11 +19,14 @@ public class Utility {
     public static final String DUPLICATE_ACK = "DuplAck";
     public static final String ERROR_ACK = "ErrAck";
     public static final String TIMEOUT = "TimeOut";
-    
+
+    public static final int MAX_PACKET_SIZE = 4096;
+    public static final short GOOD_CHECKSUM = 0;
+    public static final short BAD_CHECKSUM = 1;
+
     public static int rngErrorGenerator() {
-        // Gives a random number between 1-50
-//        return (int) Math.floor(Math.random() * (50 + 1) + 1);
-        return 50;
+         // Gives a random number between 1-50
+        return (int) Math.floor(Math.random() * (50 + 1) + 1);
     }
 
 
@@ -68,14 +71,4 @@ public class Utility {
         byte[] packetData = convertPacketToByteArray(packet);
         return new DatagramPacket(packetData, packetData.length, inetAddress, port);
     }
-
-//    public static int getNonEmptyLengthOfByteArray(byte[] dataSet){
-//        int count = 0;
-//        for(byte data : dataSet){
-//            if(data ){
-//                count++
-//            }
-//        }
-//
-//    }
 }

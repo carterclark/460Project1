@@ -4,15 +4,12 @@ import java.io.Serializable;
 
 public class Packet implements Serializable {
     private short checkSum; // 16-bit 2-byte
-    private short length; // 16-bit 2-byte
-    private int ack; // 32-bit 4-byte
+    private int length; // 16-bit 2-byte
+    private long ack; // 32-bit 4-byte
     private int seqNo; // 32-bit 4-byte Data packet Only
     private byte[] data; // 0-500 bytes. Data packet only. Variable
 
-    public Packet(byte[] data){
-        this.data = data;
-    }
-    public Packet(short checkSum, short length, int ack, int seqNo, byte[] data) {
+    public Packet(short checkSum, int length, long ack, int seqNo, byte[] data) {
         this.checkSum = checkSum;
         this.length = length;
         this.ack = ack;
@@ -28,19 +25,19 @@ public class Packet implements Serializable {
         this.checkSum = checkSum;
     }
 
-    public short getLength() {
+    public int getLength() {
         return length;
     }
 
-    public void setLength(short length) {
+    public void setLength(int length) {
         this.length = length;
     }
 
-    public int getAck() {
+    public long getAck() {
         return ack;
     }
 
-    public void setAck(int ack) {
+    public void setAck(long ack) {
         this.ack = ack;
     }
 
