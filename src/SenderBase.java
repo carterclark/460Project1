@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import objects.Packet;
 
+import static util.Utility.MAX_PACKET_SIZE;
 import static util.Utility.convertByteArrayToPacket;
 
 /**
@@ -18,8 +19,8 @@ public class SenderBase {
     protected static String inputFile = "";
     protected static double dataGrams = 0.0;
     protected static int numOfFrames = 15;
-    protected static int maxPacketSize = 4096; // default buffer will send the data in 4K chunks
-    protected static int packetSize = maxPacketSize / numOfFrames;
+    protected static int dataSize = MAX_PACKET_SIZE;
+    protected static int packetSize = MAX_PACKET_SIZE;
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
     protected long startTime;
@@ -69,8 +70,8 @@ public class SenderBase {
                             System.err.println("-s requires a packet size");
                             Usage();
                         } else {
-                            maxPacketSize = Integer.parseInt(args[++i]);
-                            if (maxPacketSize > 4096) {
+                            dataSize = Integer.parseInt(args[++i]);
+                            if (dataSize > 4096) {
                                 System.err.println("Packetsize cannot be greater than 4096");
                                 Usage();
                             }
@@ -158,54 +159,6 @@ public class SenderBase {
         }
     }
 
-    protected void validateCheckSumFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
-        while (true) {
-            // Receive the server's packet
-            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-            serverSocket.receive(receivedPacket);
-
-            short checkSum = ByteBuffer.wrap(receivedPacket.getData()).getShort();
-
-            // check for 0 from server
-            if (checkSum == 0) {
-                break;
-            }
-            System.out.println("received " + checkSum + " as a checksum");
-        }
-    }
-
-    protected void validateLenFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderLen)
-        throws IOException {
-        while (true) {
-            // Receive the server's packet
-            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-            serverSocket.receive(receivedPacket);
-
-            int lenFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-
-            // Check len from server
-            if (lenFromReceiver == senderLen) {
-                break;
-            }
-            System.out.println("received " + senderLen + " as length");
-        }
-    }
-
-    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive)
-        throws IOException {
-        while (true) {
-            // Receive the server's packet
-            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-            serverSocket.receive(receivedPacket);
-
-            int receiverSequence = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-            // Check ack from server
-            if (receiverSequence == packetCount) {
-                break;
-            }
-            System.out.println("Error: received " + receiverSequence + " as sequence number");
-        }
-    }
 
     protected void printSenderInfo(long endOffset, String senderCondition) {
         System.out.printf(
@@ -214,7 +167,8 @@ public class SenderBase {
             packetCount, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
 
-    protected void validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive)
+    protected void validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive,
+        long startOffset, int bytesRead, int packetCount)
         throws IOException, ClassNotFoundException {
 
         DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
@@ -223,7 +177,7 @@ public class SenderBase {
         Packet packet = convertByteArrayToPacket(receivedPacket.getData());
 
         assert packet != null;
-        if(packet.getAck() == startOffset){
+        if(packet.getAck()== startOffset){
 //            System.out.println("good ack");
         } else{
             System.out.println("bad ack: " + packet.getAck() + " should be " + startOffset);
@@ -235,10 +189,10 @@ public class SenderBase {
             System.out.println("bad checksum:");
         }
 
-        if(packet.getLength() == datagramPacketToSend.getLength()){
+        if(packet.getLength() == bytesRead){
 //            System.out.println("good length");
         } else{
-            System.out.println("bad length");
+            System.out.println("bad length: " + packet.getLength() + " should be " + bytesRead);
         }
 
         if(packet.getSeqNo() == packetCount){
