@@ -37,7 +37,7 @@ public class Packet implements Serializable {
         return ack;
     }
 
-    public void setAck(int ack) {
+    public void setAck(long ack) {
         this.ack = ack;
     }
 

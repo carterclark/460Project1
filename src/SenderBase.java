@@ -2,13 +2,9 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
-import objects.Packet;
-
 import static util.Utility.MAX_PACKET_SIZE;
-import static util.Utility.convertByteArrayToPacket;
 
 /**
  * On the sender side, we have to simulate sending bad amounts of data as well.
@@ -25,7 +21,6 @@ public class SenderBase {
     protected static int receiverPort = 0;
     protected long startTime;
 
-    long previousStartOffset = 0;
     protected FileInputStream inputStream;
     protected File file;
 
@@ -35,7 +30,7 @@ public class SenderBase {
     protected DatagramPacket datagramPacketToSend;
     protected byte[] dataToSend;
     protected int bytesRead;
-    protected long startOffset;
+    protected long previousOffset;
     protected int packetCount;
 
     // parse the command line parameters
@@ -125,80 +120,11 @@ public class SenderBase {
         System.exit(1);
     }
 
-    protected void validateAckFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive) throws IOException {
-
-        while (true) {
-            // Receive the server's packet
-            DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-            serverSocket.receive(receivedPacket);
-
-            int ackFromReceiver = ByteBuffer.wrap(receivedPacket.getData()).getInt();
-
-            // Check ack from server
-            if (ackFromReceiver == startOffset) { // Good ack
-                previousStartOffset = startOffset;
-                break;
-            } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
-                System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
-
-                serverSocket.receive(receivedPacket);
-                serverSocket.receive(receivedPacket);
-                serverSocket.receive(receivedPacket);
-
-                //                serverSocket.send(makeStringDatagram("error", receivedPacket));
-                serverSocket.send(datagramPacketToSend);
-                validateAckFromReceiver(serverSocket, dataToReceive);
-                break;
-
-            } else if (ackFromReceiver == 1) { // Corrupted Ack
-                System.out.println("\t\tCorrupted Ack - Received " + ackFromReceiver + ", from Receiver.");
-                //todo send error signal to receiver
-                System.exit(500); //todo here: call validateAckFromReceiver method again
-                // Tyler
-            }
-        }
-    }
-
-
     protected void printSenderInfo(long endOffset, String senderCondition) {
         System.out.printf(
             "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + senderCondition +
                 "\n",
-            packetCount, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
+            packetCount, numOfFrames, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
 
-    protected void validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive,
-        long startOffset, int bytesRead, int packetCount)
-        throws IOException, ClassNotFoundException {
-
-        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
-        serverSocket.receive(receivedPacket);
-
-        Packet packet = convertByteArrayToPacket(receivedPacket.getData());
-
-        assert packet != null;
-        if(packet.getAck()== startOffset){
-//            System.out.println("good ack");
-        } else{
-            System.out.println("bad ack: " + packet.getAck() + " should be " + startOffset);
-        }
-
-        if(packet.getCheckSum() == 0){
-//            System.out.println("good checksum");
-        } else{
-            System.out.println("bad checksum:");
-        }
-
-        if(packet.getLength() == bytesRead){
-//            System.out.println("good length");
-        } else{
-            System.out.println("bad length: " + packet.getLength() + " should be " + bytesRead);
-        }
-
-        if(packet.getSeqNo() == packetCount){
-//            System.out.println("good seq");
-        } else{
-            System.out.println("bad seq: " + packet.getSeqNo() + " should be " + packetCount);
-        }
-    }
 }

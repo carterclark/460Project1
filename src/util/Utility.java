@@ -25,9 +25,8 @@ public class Utility {
     public static final short BAD_CHECKSUM = 1;
 
     public static int rngErrorGenerator() {
-        // Gives a random number between 1-50
-//        return (int) Math.floor(Math.random() * (50 + 1) + 1);
-        return 50;
+         // Gives a random number between 1-50
+        return (int) Math.floor(Math.random() * (50 + 1) + 1);
     }
 
 

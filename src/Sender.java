@@ -8,12 +8,10 @@ import objects.Packet;
 import static util.Utility.GOOD_CHECKSUM;
 import static util.Utility.SENT;
 import static util.Utility.convertPacketToByteArray;
+import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
-    // Steps to use:
-    // javac Sender.java
-    // java Sender localhost 8080 image.png
 
     // main
     public static void main(String[] args) {
@@ -42,7 +40,7 @@ public class Sender extends SenderBase {// Client
 
             // logging counters/variables
             packetCount = 1;
-            startOffset = 0;
+            previousOffset = 0;
             long endOffset = 0;
 
             System.out.println("\nSENDING FILE\n");
@@ -61,18 +59,19 @@ public class Sender extends SenderBase {// Client
                 } else {
                     endOffset += bytesRead;
                     printSenderInfo(endOffset, SENT);
-                    startOffset = endOffset;
 
                     // sending as packet object
                     byte[] packetDataToSend = convertPacketToByteArray(
-                        new Packet(GOOD_CHECKSUM, bytesRead, startOffset, packetCount, dataToSend));
+                        new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataToSend));
                     datagramPacketToSend =
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
                     serverSocket.send(datagramPacketToSend);
 
                     //get acknowledgements from receiver
-                    validatePacketFromReceiver(serverSocket, dataToReceive, startOffset, bytesRead, packetCount);
+                    validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                        packetCount);
 
+                    previousOffset = endOffset;
                     packetCount++;
                     dataToSend = new byte[dataSize]; // flush buffer
                     datagramPacketToSend = null; // flush packet

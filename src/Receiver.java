@@ -23,7 +23,7 @@ public class Receiver {// Server
     private static long startTime;
     private static DatagramSocket serverSocket;
     private static DatagramPacket receivedDatagram;
-    static int previousAck = 0;
+    private static int previousOffset = 0;
 
     public static void main(String[] args) {
         // Steps to use:
@@ -33,8 +33,7 @@ public class Receiver {// Server
         FileOutputStream outputStream = null;
         // logging counters/variables
         int packetCount = 1;
-        long startOffset = 0;
-        long endOffset = 0;
+        int endOffset = 0;
 
         if (args.length < 2) {
             System.out.println(
@@ -73,14 +72,14 @@ public class Receiver {// Server
                     System.out.printf(
                         "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + RECV +
                             "\n",
-                        packetCount, NUM_OF_FRAMES, startOffset, endOffset, (System.currentTimeMillis() - startTime));
+                        packetCount, NUM_OF_FRAMES, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
 
                     makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
                         packetCount++);
 
 
+                    previousOffset = endOffset;
                     outputStream.write(packetFromSender.getData(), 0, packetFromSender.getLength());
-                    startOffset = endOffset; // start offset of next packet will be end offset of current packet,
                     // offsets are relative to the file not the buffer
                 }
 
@@ -105,27 +104,24 @@ public class Receiver {// Server
         // Kenny
     }
 
-    private static void makeAndSendAck(int data, DatagramSocket serverSocket, DatagramPacket datagramPacket)
+    private static long ackErrorSim(long ack)
         throws IOException {
 
         int simulateErrorRng = Utility.rngErrorGenerator();
 
         if (simulateErrorRng == 1) { // corrupted
-            data = 1;
+            ack = 1;
         } else if (simulateErrorRng == 2) { // dupe
-            data = previousAck;
-        } else { // data should be fine to send
-            previousAck = data;
+            ack = previousOffset;
         }
 
-        // Send the integer data back to the client as bytes
-        DatagramPacket datagramWithAck = new DatagramPacket(ByteBuffer.allocate(4).putInt(data).array(),
-            ByteBuffer.allocate(4).putInt(data).array().length, datagramPacket.getAddress(), datagramPacket.getPort());
-        serverSocket.send(datagramWithAck);
+        return ack;
     }
 
     private static void makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,
         Packet packetFromSender, int packetCount) throws IOException {
+
+        packetFromSender.setAck(ackErrorSim(packetFromSender.getAck()));
 
         Packet packet = new Packet(GOOD_CHECKSUM, packetFromSender.getLength(), packetFromSender.getAck(), packetCount,
             new byte[1]);

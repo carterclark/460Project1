@@ -36,10 +36,6 @@ public class SenderErrorHandler {
     }
 
     public static void main(String[] args) throws IOException {
-        //        int testNum = 1;
-        //        System.out.println("testNum: " + testNum);
-        //        Utility.changeNumber(testNum);
-        //        System.out.println("testNum: " + testNum);
         serverSocket = new DatagramSocket();
         sendPacket();
     }
@@ -53,9 +49,4 @@ public class SenderErrorHandler {
         datagramPacket = convertPacketToDatagram(makeGenericPacket(), INET_ADDRESS, PORT);
         serverSocket.send(datagramPacket);
     }
-
-    // Carter todo figure out how to send a packet over socket
-    //todo make class for sender validations and migrate all methods
-    //todo make class for receiver validations and migrate all methods
-    //todo migrate other sender base methods to utility class
 }
