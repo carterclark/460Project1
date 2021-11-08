@@ -1,27 +1,18 @@
-import com.sun.net.httpserver.HttpServer;
-
 import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.Objects;
 
-import javax.xml.crypto.Data;
+import objects.Packet;
+
+import static util.Utility.convertByteArrayToPacket;
 
 /**
  * On the sender side, we have to simulate sending bad amounts of data as well.
  */
 public class SenderBase {
-    protected static final String SENT = "SENT";
-    protected static final String DROP = "DROP";
-    protected static final String ERR = "ERR";
-
-    protected static final String DUPLICATE_ACK = "DuplAck";
-    protected static final String ERROR_ACK = "ErrAck";
-    protected static final String TIMEOUT = "TimeOut";
 
     protected static String receiverAddress = "";
     protected static String inputFile = "";
@@ -32,7 +23,6 @@ public class SenderBase {
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
     protected long startTime;
-    protected String datagramCondition;
 
     long previousStartOffset = 0;
     protected FileInputStream inputStream;
@@ -41,7 +31,7 @@ public class SenderBase {
     // for sending packets
     protected InetAddress address;
     protected DatagramSocket serverSocket;
-    protected DatagramPacket packetToSend;
+    protected DatagramPacket datagramPacketToSend;
     protected byte[] dataToSend;
     protected int bytesRead;
     protected long startOffset;
@@ -149,7 +139,13 @@ public class SenderBase {
                 break;
             } else if (ackFromReceiver == previousStartOffset) { // Dupe Ack
                 System.out.println("\t\tDuplicate Ack - Received " + ackFromReceiver + ", from Receiver");
-                serverSocket.send(makeStringDatagram("error", receivedPacket));
+
+                serverSocket.receive(receivedPacket);
+                serverSocket.receive(receivedPacket);
+                serverSocket.receive(receivedPacket);
+
+                //                serverSocket.send(makeStringDatagram("error", receivedPacket));
+                serverSocket.send(datagramPacketToSend);
                 validateAckFromReceiver(serverSocket, dataToReceive);
                 break;
 
@@ -179,7 +175,7 @@ public class SenderBase {
     }
 
     protected void validateLenFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderLen)
-            throws IOException {
+        throws IOException {
         while (true) {
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
@@ -195,8 +191,8 @@ public class SenderBase {
         }
     }
 
-    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, int senderSequence)
-            throws IOException {
+    protected void validateSequenceFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive)
+        throws IOException {
         while (true) {
             // Receive the server's packet
             DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
@@ -204,22 +200,51 @@ public class SenderBase {
 
             int receiverSequence = ByteBuffer.wrap(receivedPacket.getData()).getInt();
             // Check ack from server
-            if (receiverSequence == senderSequence) {
+            if (receiverSequence == packetCount) {
                 break;
             }
             System.out.println("Error: received " + receiverSequence + " as sequence number");
         }
     }
 
-    protected void printSenderInfo(long endOffset, String senderCondition)
-    {
-        System.out.printf("Packet:%d:%d - Start Byte Offset:%d"
-                + " - End Byte Offset: %d - Sent time:%d - " + senderCondition + "\n",
-            packetCount++, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
+    protected void printSenderInfo(long endOffset, String senderCondition) {
+        System.out.printf(
+            "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + senderCondition +
+                "\n",
+            packetCount, numOfFrames, startOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
 
-    protected DatagramPacket makeStringDatagram(String stringToSend, DatagramPacket receivedPacket){
-        byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
-        return new DatagramPacket(data, data.length, receivedPacket.getAddress(), receivedPacket.getPort());
+    protected void validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive)
+        throws IOException, ClassNotFoundException {
+
+        DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
+        serverSocket.receive(receivedPacket);
+
+        Packet packet = convertByteArrayToPacket(receivedPacket.getData());
+
+        assert packet != null;
+        if(packet.getAck() == startOffset){
+//            System.out.println("good ack");
+        } else{
+            System.out.println("bad ack: " + packet.getAck() + " should be " + startOffset);
+        }
+
+        if(packet.getCheckSum() == 0){
+//            System.out.println("good checksum");
+        } else{
+            System.out.println("bad checksum:");
+        }
+
+        if(packet.getLength() == datagramPacketToSend.getLength()){
+//            System.out.println("good length");
+        } else{
+            System.out.println("bad length");
+        }
+
+        if(packet.getSeqNo() == packetCount){
+//            System.out.println("good seq");
+        } else{
+            System.out.println("bad seq: " + packet.getSeqNo() + " should be " + packetCount);
+        }
     }
 }

@@ -3,22 +3,21 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class Sender extends SenderBase
-{// Client
+import static util.Utility.SENT;
+
+public class Sender extends SenderBase {// Client
 
     // Steps to use:
     // javac Sender.java
     // java Sender localhost 8080 image.png
 
     // main
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
         Sender sender = new Sender();
         sender.run(args);
     }
 
-    private void run(String[] args)
-    {
+    private void run(String[] args) {
 
         // verify there are at least three parameters being passed in
         if (args.length < 3) {
@@ -35,10 +34,10 @@ public class Sender extends SenderBase
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             serverSocket = new DatagramSocket(); // Instantiate the datagram socket
             dataToSend = new byte[packetSize]; // create the "send" buffer
-            byte[] dataToReceive = new byte[maxPacketSize]; // create the "receive" buffer
+            byte[] dataToReceive = new byte[packetSize]; // create the "receive" buffer
 
             // logging counters/variables
-            packetCount = 0;
+            packetCount = 1;
             startOffset = 0;
             long endOffset = 0;
 
@@ -60,17 +59,15 @@ public class Sender extends SenderBase
                     startOffset = endOffset;
 
                     // create and send the packet
-                    packetToSend = new DatagramPacket(dataToSend, bytesRead, address, receiverPort);
-                    serverSocket.send(packetToSend);
+                    datagramPacketToSend = new DatagramPacket(dataToSend, dataToSend.length, address, receiverPort);
+                    serverSocket.send(datagramPacketToSend);
 
                     //get acknowledgements from receiver
-                    validateAckFromReceiver(serverSocket, dataToReceive);
-                    validateCheckSumFromReceiver(serverSocket, dataToReceive);
-                    validateLenFromReceiver(serverSocket, dataToReceive, packetToSend.getLength());
-                    validateSequenceFromReceiver(serverSocket, dataToReceive, packetCount);
+                    validatePacketFromReceiver(serverSocket, dataToReceive);
 
+                    packetCount++;
                     dataToSend = new byte[packetSize]; // flush buffer
-                    packetToSend = null; // flush packet
+                    datagramPacketToSend = null; // flush packet
 
                 }
             } while (true);
@@ -79,7 +76,7 @@ public class Sender extends SenderBase
             serverSocket.close();
         } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
-        } catch (IOException ex) {
+        } catch (IOException | ClassNotFoundException ex) {
             ex.printStackTrace();
         }
     }

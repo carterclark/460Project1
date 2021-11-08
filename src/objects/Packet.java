@@ -1,3 +1,5 @@
+package objects;
+
 import java.io.Serializable;
 
 public class Packet implements Serializable {
@@ -7,6 +9,9 @@ public class Packet implements Serializable {
     private int seqNo; // 32-bit 4-byte Data packet Only
     private byte[] data; // 0-500 bytes. Data packet only. Variable
 
+    public Packet(byte[] data){
+        this.data = data;
+    }
     public Packet(short checkSum, short length, int ack, int seqNo, byte[] data) {
         this.checkSum = checkSum;
         this.length = length;
@@ -55,12 +60,8 @@ public class Packet implements Serializable {
         this.data = data;
     }
 
-    @Override
-    public String toString() {
-        return "checkSum: " + checkSum
-                + ", length: " + length
-                + ", ack: " + ack
-                + ", seqNo: " + seqNo
-                + ", data.length: " + data.length;
+    @Override public String toString() {
+        return "checkSum: " + checkSum + ", length: " + length + ", ack: " + ack + ", seqNo: " + seqNo
+            + ", data.length: " + data.length;
     }
 }
