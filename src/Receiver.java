@@ -125,12 +125,12 @@ public class Receiver {// Server
         int simulateErrorRng = Utility.rngErrorGenerator();
 
         if (simulateErrorRng == 1) { // corrupted
-            ack = 1;
+        	ack = 1;
         } else if (simulateErrorRng == 2) { // dupe
-            ack = previousOffset;
+        	ack = previousOffset;
         }
 
-        //                return ack;
+        // return ack;
         return 10;
     }
 
