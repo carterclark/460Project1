@@ -38,7 +38,7 @@ public class SenderBase {
         if (overrideParse) {
             receiverAddress = "localhost";
             receiverPort = 8080;
-            inputFile = "../image.png";
+            inputFile = "src/image.png";
         } else {
 
             if (args.length < 3) {

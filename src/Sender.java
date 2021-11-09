@@ -87,6 +87,7 @@ public class Sender extends SenderBase {// Client
             serverSocket.close();
         } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
+            System.out.println(ex);
         } catch (IOException | ClassNotFoundException ex) {
             ex.printStackTrace();
         }
