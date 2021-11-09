@@ -17,16 +17,20 @@ public class SenderErrorHandler {
     public SenderErrorHandler() {
     }
 
-    public static void sendPacket(DatagramSocket serverSocket, DatagramPacket packetToResend)
+    public void resetRetries(){
+        currentRetry = 0;
+    }
+
+    public void sendPacket(DatagramSocket serverSocket, DatagramPacket datagramToResend)
         throws IOException, ClassNotFoundException {
 
         if (currentRetry++ < MAX_RETRY) {
-            serverSocket.send(makeStringDatagram("error", packetToResend.getAddress(), packetToResend.getPort()));
+            serverSocket.send(makeStringDatagram("error", datagramToResend.getAddress(), datagramToResend.getPort()));
 
             System.out.println("\t\tExecuting packet retry attempt: " + currentRetry + "/" + MAX_RETRY);
-            System.out.println(convertByteArrayToPacket(packetToResend.getData()));
+            System.out.println("Packet: " + convertByteArrayToPacket(datagramToResend.getData()));
 
-            serverSocket.send(packetToResend);
+            serverSocket.send(datagramToResend);
         } else {
             System.out.println("\t\tPacket retry failed, closing program");
             System.exit(400);
