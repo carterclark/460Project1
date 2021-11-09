@@ -6,7 +6,9 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import objects.Packet;
@@ -34,52 +36,51 @@ public class Receiver {// Server
         // logging counters/variables
         int packetCount = 0;
         int endOffset = 0;
-        ArrayList<byte[]> byteArrayList = new ArrayList<>();
-
+        ArrayList<Packet> packetList = new ArrayList<>();
         parseCommandLine(args, true);
 
         try {
-            dataToReceive = new byte[MAX_PACKET_SIZE];
 
             System.out.println("\nWAITING FOR FILE\n");
             while (true) {
+                dataToReceive = new byte[MAX_PACKET_SIZE];
                 startTime = System.currentTimeMillis();
 
                 receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
                 serverSocket.receive(receivedDatagram); // wait for a start packet
-                byteArrayList.add(receivedDatagram.getData());
 
-                if (new String(receivedDatagram.getData()).trim().equals("end")) {
-                    byteArrayList.remove(byteArrayList.size() - 1);
+                if (new String(receivedDatagram.getData()).startsWith("end")) {
+                    if (!packetList.isEmpty()) {
+                        packetList.remove(packetList.size() - 1);
+                    }
                     System.out.println("Received end packet.  Terminating.");
                     break;
-                } else if (new String(receivedDatagram.getData()).trim().equals("error")) {
-                    byteArrayList.remove(byteArrayList.size() - 1);
-                    System.out.println("in error if statement");
+                } else if (new String(receivedDatagram.getData()).startsWith("error")) {
+                    if (!packetList.isEmpty()) {
+                        packetList.remove(packetList.size() - 1);
+                    }
+                } else if (new String(receivedDatagram.getData()).startsWith("stop")) {
+                    System.out.println("\t\tPacket retry failed, stopping program");
+                    System.exit(400);
                 } else {
                     Packet packetFromSender = convertByteArrayToPacket(receivedDatagram.getData());
                     assert packetFromSender != null;
-                    endOffset += packetFromSender.getLength();
-                    packetCount = packetFromSender.getSeqNo();
 
-                    System.out.printf(
-                        "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV + "\n",
-                        packetCount, NUM_OF_FRAMES, previousOffset, endOffset,
-                        (System.currentTimeMillis() - startTime));
+                    endOffset = (int) packetFromSender.getAck();
+                    printReceiverInfo(packetFromSender.getSeqNo(), endOffset);
+                    makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
+                        packetFromSender.getSeqNo());
 
-                    makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender, packetCount);
-
+                    packetList.add(packetFromSender);
                     previousOffset = endOffset;
                 }
-
-                dataToReceive = new byte[receivedDatagram.getLength()]; // flush buffer
             }
 
-            for (byte[] byteArray : byteArrayList) {
-                Packet tempPacket = convertByteArrayToPacket(byteArray);
-                assert tempPacket != null;
+            for (Packet packet : packetList) {
+                packetCount++;
+                assert packet != null;
                 assert outputStream != null;
-                outputStream.write(tempPacket.getData(), 0, tempPacket.getData().length);
+                outputStream.write(packet.getData(), 0, packet.getData().length);
             }
 
             // done, close sockets/streams
@@ -89,6 +90,12 @@ public class Receiver {// Server
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    private static void printReceiverInfo(int packetCount, int endOffset) {
+
+        System.out.printf("Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV + "\n",
+            packetCount, NUM_OF_FRAMES, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
 
     private static void parseCommandLine(String[] args, boolean overrideParse)
@@ -110,28 +117,17 @@ public class Receiver {// Server
 
     }
 
-    private static boolean errorInData() {
-        return (new String(receivedDatagram.getData()).trim().equals("error"));
-    }
-
-    private static void errorFromSender() {
-        // todo make method to send acknowledgement back to sender
-        // todo re-receive packet and confirm it's not error signal, if it is, then kill program
-        // Kenny
-    }
-
     private static long ackErrorSim(long ack) throws IOException {
 
         int simulateErrorRng = Utility.rngErrorGenerator();
 
         if (simulateErrorRng == 1) { // corrupted
-        	ack = 1;
+            ack = 1;
         } else if (simulateErrorRng == 2) { // dupe
-        	ack = previousOffset;
+            ack = previousOffset;
         }
 
-        // return ack;
-        return 10;
+        return ack;
     }
 
     private static void makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,

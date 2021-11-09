@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-import error.SenderErrorHandler;
 import objects.Packet;
 
 import static util.Utility.convertByteArrayToPacket;
@@ -20,8 +19,8 @@ public class SenderValidator {
         return validator;
     }
 
-    public static boolean validatePacketFromReceiver(DatagramSocket serverSocket, DatagramPacket datagramPacketToSend,
-        byte[] dataToReceive, long endOffset, long previousOffset, int bytesRead, int packetCount)
+    public static boolean validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long endOffset,
+        long previousOffset, int bytesRead, int packetCount)
         throws IOException, ClassNotFoundException {
 
         DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);

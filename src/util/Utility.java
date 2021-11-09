@@ -54,9 +54,10 @@ public class Utility {
 
     public static Packet convertByteArrayToPacket(byte[] data) throws IOException, ClassNotFoundException {
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(data);
-        ObjectInput input = new ObjectInputStream(bais);
+
         try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            ObjectInput input = new ObjectInputStream(bais);
             return (Packet) input.readObject();
         } catch (EOFException exception) {
             System.out.println("In util catch block");
