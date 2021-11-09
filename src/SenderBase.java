@@ -31,85 +31,92 @@ public class SenderBase {
     protected int packetCount;
 
     // parse the command line parameters
-    protected static void ParseCmdLine(String[] args) {
+    protected static void ParseCmdLine(String[] args, boolean overrideParse) {
         int i = 0;
         String arg;
 
-        if (args.length < 3) {
-            Usage(); // run with no parameters or too few to see usage message
-        }
+        if (overrideParse) {
+            receiverAddress = "localhost";
+            receiverPort = 8080;
+            inputFile = "../image.png";
+        } else {
 
-        while (i < args.length) {
-            arg = args[i];
-
-            // process any command line switches
-            if (arg.startsWith("-")) {
-
-                // optional parameters
-                switch (arg.charAt(1)) {
-                    case 'd':
-                        // if next argument also starts with a - then the value for the command line
-                        // switch was not provided
-                        if (args[i + 1].startsWith("-")) {
-                            System.err.println("-d requires a value");
-                            Usage();
-                        } else {
-                            dataGrams = Double.parseDouble(args[++i]);
-                        }
-                        break;
-                    case 's':
-                        if (args[i + 1].startsWith("-")) {
-                            System.err.println("-s requires a packet size");
-                            Usage();
-                        } else {
-                            dataSize = Integer.parseInt(args[++i]);
-                            if (dataSize > 4096) {
-                                System.err.println("Packetsize cannot be greater than 4096");
-                                Usage();
-                            }
-                        }
-                        break;
-                    case 't':
-                        if (args[i + 1].startsWith("-")) {
-                            System.err.println("-t requires a timeout value");
-                            Usage();
-                        } else {
-                            timeOut = Integer.parseInt(args[++i]);
-                        }
-                        break;
-                }
-                // mandatory parameters
-            } else {
-                // not a command line switch so must be the filename, receiver address, or
-                // receiver port
-                // must have at minimum the filename, the receiver address, and the receiver
-                // port
-                if (i == (args.length - 3)) {
-                    receiverAddress = args[i];
-                }
-
-                if (i == (args.length - 2)) {
-                    receiverPort = Integer.parseInt(args[i]);
-                }
-
-                if (i == (args.length - 1)) {
-                    inputFile = args[i];
-                }
-                i++;
+            if (args.length < 3) {
+                System.out.println("\n\nINSUFFICIENT COMMAND LINE ARGUMENTS\n\n");
+                Usage();
             }
-        }
 
-        // if values were not provided on commandline the defaults will trigger a usage
-        // message
-        if (Objects.equals(inputFile, "") || Objects.equals(receiverAddress, "") | receiverPort == 0) {
-            Usage();
+            while (i < args.length) {
+                arg = args[i];
+
+                // process any command line switches
+                if (arg.startsWith("-")) {
+
+                    // optional parameters
+                    switch (arg.charAt(1)) {
+                        case 'd':
+                            // if next argument also starts with a - then the value for the command line
+                            // switch was not provided
+                            if (args[i + 1].startsWith("-")) {
+                                System.err.println("-d requires a value");
+                                Usage();
+                            } else {
+                                dataGrams = Double.parseDouble(args[++i]);
+                            }
+                            break;
+                        case 's':
+                            if (args[i + 1].startsWith("-")) {
+                                System.err.println("-s requires a packet size");
+                                Usage();
+                            } else {
+                                dataSize = Integer.parseInt(args[++i]);
+                                if (dataSize > 4096) {
+                                    System.err.println("Packetsize cannot be greater than 4096");
+                                    Usage();
+                                }
+                            }
+                            break;
+                        case 't':
+                            if (args[i + 1].startsWith("-")) {
+                                System.err.println("-t requires a timeout value");
+                                Usage();
+                            } else {
+                                timeOut = Integer.parseInt(args[++i]);
+                            }
+                            break;
+                    }
+                    // mandatory parameters
+                } else {
+                    // not a command line switch so must be the filename, receiver address, or
+                    // receiver port
+                    // must have at minimum the filename, the receiver address, and the receiver
+                    // port
+                    if (i == (args.length - 3)) {
+                        receiverAddress = args[i];
+                    }
+
+                    if (i == (args.length - 2)) {
+                        receiverPort = Integer.parseInt(args[i]);
+                    }
+
+                    if (i == (args.length - 1)) {
+                        inputFile = args[i];
+                    }
+                    i++;
+                }
+            }
+
+            // if values were not provided on commandline the defaults will trigger a usage
+            // message
+            if (Objects.equals(inputFile, "") || Objects.equals(receiverAddress, "") | receiverPort == 0) {
+                Usage();
+            }
         }
     }
 
     protected void printSenderInfo(long endOffset, String senderCondition) {
         System.out.printf(
-            "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + senderCondition +
-                "\n",
+            "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + senderCondition + "\n",
             packetCount, numOfFrames, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
 

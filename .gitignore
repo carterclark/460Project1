@@ -12,8 +12,4 @@ out/
 
 # Files produced
 new_image.png
-Packet.class
-Receiver.class
-Sender.class
-SenderBase.class
-Utility.class
+*.class

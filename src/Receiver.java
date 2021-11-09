@@ -1,8 +1,10 @@
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,25 +25,20 @@ public class Receiver {// Server
 
     private static long startTime;
     private static DatagramSocket serverSocket;
+    private static FileOutputStream outputStream = null;
     private static DatagramPacket receivedDatagram;
     private static int previousOffset = 0;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SocketException, FileNotFoundException {
 
-        FileOutputStream outputStream = null;
         // logging counters/variables
         int packetCount = 0;
         int endOffset = 0;
         ArrayList<byte[]> byteArrayList = new ArrayList<>();
 
-        if (args.length < 2) {
-            System.out.println(
-                "\n\nERROR: you must specify the port and the new file name.  Example: java Receiver 5656 some-new-file.jpg");
-            System.exit(1);
-        }
+        parseCommandLine(args, true);
+
         try {
-            // initialize socket and create output stream
-            serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
             dataToReceive = new byte[MAX_PACKET_SIZE];
 
             System.out.println("\nWAITING FOR FILE\n");
@@ -65,14 +62,9 @@ public class Receiver {// Server
                     endOffset += packetFromSender.getLength();
                     packetCount = packetFromSender.getSeqNo();
 
-                    // if output stream is not initialized do it now
-                    if (outputStream == null) {
-                        outputStream = new FileOutputStream(args[1]);
-                    }
-
                     System.out.printf(
-                        "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV
-                            + "\n", packetCount, NUM_OF_FRAMES, previousOffset, endOffset,
+                        "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV + "\n",
+                        packetCount, NUM_OF_FRAMES, previousOffset, endOffset,
                         (System.currentTimeMillis() - startTime));
 
                     makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender, packetCount);
@@ -99,6 +91,25 @@ public class Receiver {// Server
         }
     }
 
+    private static void parseCommandLine(String[] args, boolean overrideParse)
+        throws FileNotFoundException, SocketException {
+
+        if (overrideParse) {
+            serverSocket = new DatagramSocket(8080);
+            outputStream = new FileOutputStream("new_image.png");
+        } else {
+            if (args.length < 2) {
+                System.out.println(
+                    "\n\nERROR: you must specify the port and the new file name.  Example: java Receiver 5656 some-new-file.jpg");
+                System.exit(1);
+            } else {
+                serverSocket = new DatagramSocket(Integer.parseInt(args[0]));
+                outputStream = new FileOutputStream(args[1]);
+            }
+        }
+
+    }
+
     private static boolean errorInData() {
         return (new String(receivedDatagram.getData()).trim().equals("error"));
     }
@@ -119,7 +130,7 @@ public class Receiver {// Server
             ack = previousOffset;
         }
 
-//                return ack;
+        //                return ack;
         return 10;
     }
 

@@ -24,12 +24,8 @@ public class Sender extends SenderBase {// Client
 
     private void run(String[] args) {
 
-        // verify there are at least three parameters being passed in
-        if (args.length < 3) {
-            System.out.println("\n\nINSUFFICIENT COMMAND LINE ARGUMENTS\n\n");
-            Usage();
-        }
-        ParseCmdLine(args); // parse the parameters that were passed in
+        ParseCmdLine(args, true); // parse the parameters that were passed in
+
         try {
             inputStream = new FileInputStream(inputFile); // open input stream
 
