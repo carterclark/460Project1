@@ -4,6 +4,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import objects.Packet;
 import util.Utility;
@@ -19,21 +21,18 @@ public class Receiver {// Server
     private static byte[] dataToReceive;
     protected static final int NUM_OF_FRAMES = 16;
 
-
     private static long startTime;
     private static DatagramSocket serverSocket;
     private static DatagramPacket receivedDatagram;
     private static int previousOffset = 0;
 
     public static void main(String[] args) {
-        // Steps to use:
-        // javac Receiver.java
-        // java Receiver 8080 new_image.png
 
         FileOutputStream outputStream = null;
         // logging counters/variables
-        int packetCount = 1;
+        int packetCount = 0;
         int endOffset = 0;
+        ArrayList<byte[]> byteArrayList = new ArrayList<>();
 
         if (args.length < 2) {
             System.out.println(
@@ -51,18 +50,20 @@ public class Receiver {// Server
 
                 receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
                 serverSocket.receive(receivedDatagram); // wait for a start packet
-
-//                DatagramPacket tempDatagram = new DatagramPacket(new byte[MAX_PACKET_SIZE], MAX_PACKET_SIZE);
-//                serverSocket.receive(tempDatagram);
-
+                byteArrayList.add(receivedDatagram.getData());
 
                 if (new String(receivedDatagram.getData()).trim().equals("end")) {
+                    byteArrayList.remove(byteArrayList.size() - 1);
                     System.out.println("Received end packet.  Terminating.");
                     break;
+                } else if (new String(receivedDatagram.getData()).trim().equals("error")) {
+                    byteArrayList.remove(byteArrayList.size() - 1);
+                    System.out.println("in error if statement");
                 } else {
                     Packet packetFromSender = convertByteArrayToPacket(receivedDatagram.getData());
                     assert packetFromSender != null;
                     endOffset += packetFromSender.getLength();
+                    packetCount = packetFromSender.getSeqNo();
 
                     // if output stream is not initialized do it now
                     if (outputStream == null) {
@@ -70,25 +71,29 @@ public class Receiver {// Server
                     }
 
                     System.out.printf(
-                        "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + RECV +
-                            "\n",
-                        packetCount, NUM_OF_FRAMES, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
+                        "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV
+                            + "\n", packetCount, NUM_OF_FRAMES, previousOffset, endOffset,
+                        (System.currentTimeMillis() - startTime));
 
-                    makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
-                        packetCount++);
-
+                    makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender, packetCount);
 
                     previousOffset = endOffset;
-                    outputStream.write(packetFromSender.getData(), 0, packetFromSender.getLength());
-                    // offsets are relative to the file not the buffer
                 }
 
                 dataToReceive = new byte[receivedDatagram.getLength()]; // flush buffer
             }
 
+            for (byte[] byteArray : byteArrayList) {
+                Packet tempPacket = convertByteArrayToPacket(byteArray);
+                assert tempPacket != null;
+                assert outputStream != null;
+                outputStream.write(tempPacket.getData(), 0, tempPacket.getData().length);
+            }
+
             // done, close sockets/streams
             serverSocket.close();
             outputStream.close();
+
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -104,8 +109,7 @@ public class Receiver {// Server
         // Kenny
     }
 
-    private static long ackErrorSim(long ack)
-        throws IOException {
+    private static long ackErrorSim(long ack) throws IOException {
 
         int simulateErrorRng = Utility.rngErrorGenerator();
 
@@ -115,7 +119,8 @@ public class Receiver {// Server
             ack = previousOffset;
         }
 
-        return ack;
+//                return ack;
+        return 10;
     }
 
     private static void makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,

@@ -12,7 +12,6 @@ import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
-
     // main
     public static void main(String[] args) {
         Sender sender = new Sender();
@@ -68,8 +67,8 @@ public class Sender extends SenderBase {// Client
                     serverSocket.send(datagramPacketToSend);
 
                     //get acknowledgements from receiver
-                    validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                        packetCount);
+                    validatePacketFromReceiver(serverSocket, datagramPacketToSend, dataToReceive, endOffset,
+                        previousOffset, bytesRead, packetCount);
 
                     previousOffset = endOffset;
                     packetCount++;

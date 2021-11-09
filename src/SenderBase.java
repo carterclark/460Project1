@@ -122,7 +122,7 @@ public class SenderBase {
 
     protected void printSenderInfo(long endOffset, String senderCondition) {
         System.out.printf(
-            "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + senderCondition +
+            "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + senderCondition +
                 "\n",
             packetCount, numOfFrames, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
