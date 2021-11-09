@@ -1,21 +1,15 @@
 package validation;
 
-import java.io.*;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
+import error.SenderErrorHandler;
 import objects.Packet;
 
 import static util.Utility.convertByteArrayToPacket;
 
 public class SenderValidator {
-    private long startOffset;
-    private int packetCount;
-    long previousStartOffset = 0;
-    private static int numOfFrames = 15;
-    private long startTime;
 
     private static SenderValidator validator = new SenderValidator();
 
@@ -26,8 +20,9 @@ public class SenderValidator {
         return validator;
     }
 
-    public static void validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long startOffset,
-        long previousOffset, int bytesRead, int packetCount) throws IOException, ClassNotFoundException {
+    public static boolean validatePacketFromReceiver(DatagramSocket serverSocket, DatagramPacket datagramPacketToSend,
+        byte[] dataToReceive, long endOffset, long previousOffset, int bytesRead, int packetCount)
+        throws IOException, ClassNotFoundException {
 
         DatagramPacket receivedPacket = new DatagramPacket(dataToReceive, dataToReceive.length);
         serverSocket.receive(receivedPacket);
@@ -35,22 +30,20 @@ public class SenderValidator {
         Packet packet = convertByteArrayToPacket(receivedPacket.getData());
 
         assert packet != null;
-        if (packet.getAck() == startOffset) {
+        if (packet.getAck() == endOffset) {
             // good ack
-        } else if(packet.getAck() == previousOffset){
+        } else if (packet.getAck() == previousOffset) {
             System.out.println("\t\tDuplicate Ack - Received " + packet.getAck() + ", from Receiver");
-            //todo activate error handler
-        }
-        else if (packet.getAck() == 1) { // Corrupted Ack
+            return false;
+        } else if (packet.getAck() == 1) { // Corrupted Ack
             System.out.println("\t\tCorrupted Ack - Received " + packet.getAck() + ", from Receiver.");
-            // todo activate error handler
-            // Tyler
+            return false;
         }
 
         if (packet.getCheckSum() == 0) {
             // good checksum
         } else {
-            System.out.println("bad checksum:");
+            System.out.println("bad checksum: " + packet.getCheckSum());
         }
 
         if (packet.getLength() == bytesRead) {
@@ -64,12 +57,10 @@ public class SenderValidator {
         } else {
             System.out.println("bad seq: " + packet.getSeqNo() + " should be " + packetCount);
         }
+
+        return true;
     }
 
-    public DatagramPacket makeStringDatagram(String stringToSend, DatagramPacket receivedPacket) {
-        byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
-        return new DatagramPacket(data, data.length, receivedPacket.getAddress(), receivedPacket.getPort());
-    }
 }
     
 

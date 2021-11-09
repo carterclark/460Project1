@@ -3,50 +3,38 @@ package error;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 
 import objects.Packet;
-import util.Utility;
 
-import static util.Utility.convertPacketToDatagram;
-import static util.Utility.makeGenericPacket;
+import static util.Utility.convertByteArrayToPacket;
+import static util.Utility.makeStringDatagram;
 
 public class SenderErrorHandler {
 
-    private static DatagramSocket serverSocket;
-    private static DatagramPacket datagramPacket;
-    private static byte[] data = new byte[4096];
-    private static int PORT = 8081;
-    private static InetAddress INET_ADDRESS;
+    private static final int MAX_RETRY = 3;
+    private static int currentRetry = 0;
 
-    static {
-        try {
-            INET_ADDRESS = InetAddress.getByName("localhost");
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+    public SenderErrorHandler() {
+    }
+
+    public void resetRetries(){
+        currentRetry = 0;
+    }
+
+    public void sendPacket(DatagramSocket serverSocket, DatagramPacket datagramToResend)
+        throws IOException, ClassNotFoundException {
+
+        if (currentRetry++ < MAX_RETRY) {
+            serverSocket.send(makeStringDatagram("error", datagramToResend.getAddress(), datagramToResend.getPort()));
+
+            System.out.println("\t\tExecuting packet retry attempt: " + currentRetry + "/" + MAX_RETRY);
+            System.out.println("Packet: " + convertByteArrayToPacket(datagramToResend.getData()));
+
+            serverSocket.send(datagramToResend);
+        } else {
+            System.out.println("\t\tPacket retry failed, closing program");
+            System.exit(400);
         }
-    }
 
-    public SenderErrorHandler() throws UnknownHostException {
-    }
-
-    public static void main(String[] args) throws IOException {
-        serverSocket = new DatagramSocket();
-        sendPacket();
-    }
-
-    public static void sendPacket() throws IOException {
-        //        int numToSend = 123;
-        //        datagramPacket = new DatagramPacket(ByteBuffer.allocate(4).putInt(numToSend).array(),
-        //            ByteBuffer.allocate(4).putInt(numToSend).array().length, INET_ADDRESS, PORT);
-
-        System.out.println("Sending Packet-----------");
-        datagramPacket = convertPacketToDatagram(makeGenericPacket(), INET_ADDRESS, PORT);
-        serverSocket.send(datagramPacket);
     }
 }

@@ -3,15 +3,18 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+import error.SenderErrorHandler;
 import objects.Packet;
 
 import static util.Utility.GOOD_CHECKSUM;
 import static util.Utility.SENT;
+import static util.Utility.Usage;
 import static util.Utility.convertPacketToByteArray;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
+    private SenderErrorHandler errorHandler = new SenderErrorHandler();
 
     // main
     public static void main(String[] args) {
@@ -63,18 +66,23 @@ public class Sender extends SenderBase {// Client
                     // sending as packet object
                     byte[] packetDataToSend = convertPacketToByteArray(
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataToSend));
-                    datagramPacketToSend =
+                    datagramToSend =
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
-                    serverSocket.send(datagramPacketToSend);
+                    serverSocket.send(datagramToSend);
 
                     //get acknowledgements from receiver
-                    validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                        packetCount);
+                    if(!validatePacketFromReceiver(serverSocket, datagramToSend, dataToReceive, endOffset,
+                        previousOffset, bytesRead, packetCount)){
+                        //todo send packet to receiver from error handler
+                        errorHandler.sendPacket(serverSocket, datagramToSend);
+                    }
+
+                    errorHandler.resetRetries();
 
                     previousOffset = endOffset;
                     packetCount++;
                     dataToSend = new byte[dataSize]; // flush buffer
-                    datagramPacketToSend = null; // flush packet
+                    datagramToSend = null; // flush packet
 
                 }
             } while (true);

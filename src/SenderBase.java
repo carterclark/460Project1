@@ -5,10 +5,8 @@ import java.net.InetAddress;
 import java.util.Objects;
 
 import static util.Utility.MAX_PACKET_SIZE;
+import static util.Utility.Usage;
 
-/**
- * On the sender side, we have to simulate sending bad amounts of data as well.
- */
 public class SenderBase {
 
     protected static String receiverAddress = "";
@@ -16,7 +14,6 @@ public class SenderBase {
     protected static double dataGrams = 0.0;
     protected static int numOfFrames = 15;
     protected static int dataSize = MAX_PACKET_SIZE;
-    protected static int packetSize = MAX_PACKET_SIZE;
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
     protected long startTime;
@@ -27,7 +24,7 @@ public class SenderBase {
     // for sending packets
     protected InetAddress address;
     protected DatagramSocket serverSocket;
-    protected DatagramPacket datagramPacketToSend;
+    protected DatagramPacket datagramToSend;
     protected byte[] dataToSend;
     protected int bytesRead;
     protected long previousOffset;
@@ -109,20 +106,9 @@ public class SenderBase {
         }
     }
 
-    // directions for use
-    protected static void Usage() {
-        System.out.println("\n\nMandatory command parameters must be entered in the order displayed here.");
-        System.out.println("Parameters in [] are optional and must come before the three mandatory items.");
-        System.out.println("-d is the percentage of packets to alter.  -d 2.5 (not implemented)");
-        System.out.println("-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)");
-        System.out.println("-t is the timeout value.  -t 300 (not implemented)");
-        System.out.println("Usage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
-        System.exit(1);
-    }
-
     protected void printSenderInfo(long endOffset, String senderCondition) {
         System.out.printf(
-            "Packet: %d/%d - Start Byte Offset:%d" + " - End Byte Offset: %d - Sent time:%d - " + senderCondition +
+            "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + senderCondition +
                 "\n",
             packetCount, numOfFrames, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
     }
