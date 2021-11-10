@@ -4,8 +4,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Objects;
 
-import static util.Utility.MAX_PACKET_SIZE;
+import static util.Constants.MAX_PACKET_SIZE;
+import static util.Constants.SENDING;
 import static util.Utility.Usage;
+import static util.Utility.makeSpaces;
 
 public class SenderBase {
 
@@ -114,11 +116,11 @@ public class SenderBase {
         }
     }
 
-    protected void printSenderInfo(long endOffset, String senderCondition) {
-        System.out.printf(
-            "Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t\t"
-                + senderCondition + "\n",
-            packetCount, numOfFrames, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
+    protected void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
+        long startTime, String senderCondition) {
+        System.out.printf("%s:\t%s%d:%sTime Sent:%s" + "%s\n", makeSpaces(senderAction), makeSpaces(packetCount),
+            previousOffset, makeSpaces(endOffset), makeSpaces(System.currentTimeMillis() - startTime),
+            makeSpaces(senderCondition));
     }
 
 }

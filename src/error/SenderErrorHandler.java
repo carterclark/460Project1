@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-import objects.Packet;
-
-import static util.Utility.convertByteArrayToPacket;
+import static util.Constants.ACK_RECEIVED;
 import static util.Utility.makeStringDatagram;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
@@ -31,8 +29,10 @@ public class SenderErrorHandler {
             System.out.println("\t\tExecuting packet retry attempt: " + currentRetry + "/" + MAX_RETRY);
             serverSocket.send(datagramToResend);
 
-            if (validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                packetCount)) {
+            String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                packetCount);
+
+            if (ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                 break;
             }
 

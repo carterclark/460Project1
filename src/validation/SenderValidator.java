@@ -6,20 +6,14 @@ import java.net.DatagramSocket;
 
 import objects.Packet;
 
+import static util.Constants.ACK_RECEIVED;
+import static util.Constants.DUP_ACK;
+import static util.Constants.ERR_ACK;
 import static util.Utility.convertByteArrayToPacket;
 
 public class SenderValidator {
 
-    private static SenderValidator validator = new SenderValidator();
-
-    private SenderValidator() {
-    }
-
-    public static SenderValidator getValidator() {
-        return validator;
-    }
-
-    public static boolean validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long endOffset,
+    public static String validatePacketFromReceiver(DatagramSocket serverSocket, byte[] dataToReceive, long endOffset,
         long previousOffset, int bytesRead, int packetCount)
         throws IOException, ClassNotFoundException {
 
@@ -33,10 +27,10 @@ public class SenderValidator {
             // good ack
         } else if (packet.getAck() == previousOffset) {
             System.out.println("\t\tDuplicate Ack - Received " + packet.getAck() + ", from Receiver");
-            return false;
+            return DUP_ACK;
         } else if (packet.getAck() == 1) { // Corrupted Ack
             System.out.println("\t\tCorrupted Ack - Received " + packet.getAck() + ", from Receiver.");
-            return false;
+            return ERR_ACK;
         }
 
         if (packet.getCheckSum() == 0) {
@@ -57,7 +51,7 @@ public class SenderValidator {
             System.out.println("bad seq: " + packet.getSeqNo() + " should be " + packetCount);
         }
 
-        return true;
+        return ACK_RECEIVED;
     }
 
 }

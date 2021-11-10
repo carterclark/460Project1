@@ -5,13 +5,14 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
 
 import error.SenderErrorHandler;
 import objects.Packet;
 
-import static util.Utility.GOOD_CHECKSUM;
-import static util.Utility.SENT;
+import static util.Constants.ACK_RECEIVED;
+import static util.Constants.GOOD_CHECKSUM;
+import static util.Constants.SENDING;
+import static util.Constants.SENT;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.makeStringDatagram;
 import static validation.SenderValidator.validatePacketFromReceiver;
@@ -44,7 +45,7 @@ public class Sender extends SenderBase {// Client
             previousOffset = 0;
             long endOffset = 0;
 
-            System.out.println("\nSENDING FILE\n");
+            System.out.println("\nStarting Sender\n");
             do {
                 startTime = System.currentTimeMillis();
                 // read the input file in packetSize chunks, and send them to the server
@@ -55,7 +56,6 @@ public class Sender extends SenderBase {// Client
                     break;
                 } else {
                     endOffset += bytesRead;
-                    printSenderInfo(endOffset, SENT);
 
                     // sending as packet object
                     byte[] packetDataToSend = convertPacketToByteArray(
@@ -64,15 +64,17 @@ public class Sender extends SenderBase {// Client
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
                     serverSocket.send(datagramToSend);
 
-                    //get acknowledgements from receiver
-                    if (!validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                        packetCount)) {
+                    String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                        packetCount);
 
+                    printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
+                    //get acknowledgements from receiver
+                    if (!ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                         errorHandler.resendPacket(serverSocket, datagramToSend, dataToReceive, endOffset,
                             previousOffset, bytesRead, packetCount);
+                        errorHandler.resetRetries();
                     }
 
-                    errorHandler.resetRetries();
 
                     previousOffset = endOffset;
                     packetCount++;

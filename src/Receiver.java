@@ -3,27 +3,23 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
 import objects.Packet;
 import util.Utility;
 
-import static util.Utility.GOOD_CHECKSUM;
-import static util.Utility.MAX_PACKET_SIZE;
-import static util.Utility.RECV;
+import static util.Constants.GOOD_CHECKSUM;
+import static util.Constants.MAX_PACKET_SIZE;
+import static util.Constants.RECEIVED;
+import static util.Constants.RECEIVING;
 import static util.Utility.convertByteArrayToPacket;
 import static util.Utility.convertPacketToDatagram;
+import static util.Utility.makeSpaces;
 
 public class Receiver {// Server
 
     private static byte[] dataToReceive;
-    protected static final int NUM_OF_FRAMES = 16;
 
     private static long startTime;
     private static DatagramSocket serverSocket;
@@ -34,14 +30,12 @@ public class Receiver {// Server
     public static void main(String[] args) throws SocketException, FileNotFoundException {
 
         // logging counters/variables
-        int packetCount = 0;
         int endOffset = 0;
         ArrayList<Packet> packetList = new ArrayList<>();
         parseCommandLine(args, true);
 
         try {
-
-            System.out.println("\nWAITING FOR FILE\n");
+            System.out.println("\nStarting Receiver\n");
             while (true) {
                 dataToReceive = new byte[MAX_PACKET_SIZE];
                 startTime = System.currentTimeMillis();
@@ -67,7 +61,7 @@ public class Receiver {// Server
                     assert packetFromSender != null;
 
                     endOffset = (int) packetFromSender.getAck();
-                    printReceiverInfo(packetFromSender.getSeqNo(), endOffset);
+                    printReceiverInfo(RECEIVING, startTime, packetFromSender.getSeqNo(), RECEIVED);
                     makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
                         packetFromSender.getSeqNo());
 
@@ -77,7 +71,6 @@ public class Receiver {// Server
             }
 
             for (Packet packet : packetList) {
-                packetCount++;
                 assert packet != null;
                 assert outputStream != null;
                 outputStream.write(packet.getData(), 0, packet.getData().length);
@@ -92,10 +85,11 @@ public class Receiver {// Server
         }
     }
 
-    private static void printReceiverInfo(int packetCount, int endOffset) {
+    private static void printReceiverInfo(String receiverAction, long startTime, int packetCount,
+        String receiverCondition) {
 
-        System.out.printf("Packet: %d/%d\tStart Byte Offset:%d\tEnd Byte Offset: %d\tSent time:%d\t" + RECV + "\n",
-            packetCount, NUM_OF_FRAMES, previousOffset, endOffset, (System.currentTimeMillis() - startTime));
+        System.out.printf("%s:\t%s%s%s\n", receiverAction,
+            makeSpaces(System.currentTimeMillis() - startTime), makeSpaces(packetCount), receiverCondition);
     }
 
     private static void parseCommandLine(String[] args, boolean overrideParse)
