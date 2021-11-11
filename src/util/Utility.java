@@ -1,13 +1,19 @@
 package util;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 
-import javax.xml.crypto.Data;
-
 import objects.Packet;
+
+import static util.Constants.STATUS_ARRAY;
 
 public class Utility {
 
@@ -41,7 +47,6 @@ public class Utility {
 
     public static Packet convertByteArrayToPacket(byte[] data) throws IOException, ClassNotFoundException {
 
-
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(data);
             ObjectInput input = new ObjectInputStream(bais);
@@ -70,15 +75,24 @@ public class Utility {
     }
 
     public static DatagramPacket makeStringDatagram(String stringToSend, InetAddress inetAddress, int port) {
-        byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
-        return new DatagramPacket(data, data.length, inetAddress, port);
+        byte[] data = stringToSend.getBytes();
+        return new DatagramPacket(data, stringToSend.length(), inetAddress, port);
     }
 
-    public static String makeSpaces(Object object){
+    public static String makeSpaces(Object object) {
         StringBuilder string = new StringBuilder(String.valueOf(object));
-        int numSpaces = 6 - string.length();
+        int numSpaces = 7 - string.length();
         string.append(" ".repeat(Math.max(0, numSpaces)));
 
         return string.toString();
+    }
+
+    public static String getAckStatus(String ackMessage) {
+        for (String ackStatus : STATUS_ARRAY) {
+            if (ackMessage.contains(ackStatus)) {
+                return ackStatus;
+            }
+        }
+        return "ERR";
     }
 }
