@@ -5,7 +5,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 import static util.Constants.ACK_RECEIVED;
+import static util.Constants.SENDING;
 import static util.Utility.makeStringDatagram;
+import static util.Utility.printSenderInfo;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
@@ -21,16 +23,18 @@ public class SenderErrorHandler {
     }
 
     public void resendPacket(DatagramSocket serverSocket, DatagramPacket datagramToResend, byte[] dataToReceive,
-        long endOffset, long previousOffset, int bytesRead, int packetCount)
+        long endOffset, long previousOffset, int bytesRead, int packetCount, long startTime)
         throws IOException, ClassNotFoundException {
 
         while (currentRetry++ < MAX_RETRY) {
             serverSocket.send(makeStringDatagram("error", datagramToResend.getAddress(), datagramToResend.getPort()));
-            System.out.println("\t\tExecuting packet retry attempt: " + currentRetry + "/" + MAX_RETRY);
             serverSocket.send(datagramToResend);
 
-            String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                packetCount);
+            String ackFromReceiver =
+                validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                    packetCount);
+
+            printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
 
             if (ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                 break;

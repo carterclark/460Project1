@@ -15,6 +15,7 @@ import static util.Constants.SENDING;
 import static util.Constants.SENT;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.makeStringDatagram;
+import static util.Utility.printSenderInfo;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
@@ -71,7 +72,7 @@ public class Sender extends SenderBase {// Client
                     //get acknowledgements from receiver
                     if (!ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                         errorHandler.resendPacket(serverSocket, datagramToSend, dataToReceive, endOffset,
-                            previousOffset, bytesRead, packetCount);
+                            previousOffset, bytesRead, packetCount, startTime);
                         errorHandler.resetRetries();
                     }
 

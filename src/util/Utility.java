@@ -10,12 +10,20 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.Random;
 
 import objects.Packet;
 
 import static util.Constants.STATUS_ARRAY;
 
 public class Utility {
+
+    public static void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
+        long startTime, String senderCondition) {
+        System.out.printf("%s:\t%s%d:%sTime Sent:%s" + "%s\n", makeSpaces(senderAction), makeSpaces(packetCount),
+            previousOffset, makeSpaces(endOffset), makeSpaces(System.currentTimeMillis() - startTime),
+            makeSpaces(senderCondition));
+    }
 
     public static void Usage() {
         System.out.println("\n\nMandatory command parameters must be entered in the order displayed here.");
@@ -28,8 +36,9 @@ public class Utility {
     }
 
     public static int rngErrorGenerator() {
-        // Gives a random number between 1-50
-        return (int) Math.floor(Math.random() * (50 + 1) + 1);
+        Random random = new Random();
+        // Gives a random number between 1-100
+        return random.nextInt(101) + 1;
     }
 
     public static byte[] convertPacketToByteArray(Packet packet) throws IOException {

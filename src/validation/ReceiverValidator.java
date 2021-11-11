@@ -33,9 +33,9 @@ public class ReceiverValidator {
 
         int simulateErrorRng = Utility.rngErrorGenerator();
 
-        if (simulateErrorRng == 1) { // corrupted
+        if (simulateErrorRng < 3) { // corrupted
             ack = 1;
-        } else if (simulateErrorRng == 2) { // dupe
+        } else if (simulateErrorRng < 15) { // dupe
             ack = previousOffset;
         }
 

@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import objects.Packet;
 
 import static util.Constants.ACK_RECEIVED;
+import static util.Constants.CORRUPT;
 import static util.Constants.DUP_ACK;
 import static util.Constants.ERR_ACK;
 import static util.Utility.convertByteArrayToPacket;
@@ -28,11 +29,9 @@ public class SenderValidator {
         if (packet.getAck() == endOffset) {
             // good ack
         } else if (packet.getAck() == previousOffset) {
-            System.out.println("\t\tDuplicate Ack - Received " + packet.getAck() + ", from Receiver");
             ackToReturn = DUP_ACK;
         } else if (packet.getAck() == 1) { // Corrupted Ack
-            System.out.println("\t\tCorrupted Ack - Received " + packet.getAck() + ", from Receiver.");
-            ackToReturn = ERR_ACK;
+            ackToReturn = CORRUPT;
         }
 
         if (packet.getCheckSum() == 0) {
