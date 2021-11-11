@@ -116,11 +116,4 @@ public class SenderBase {
         }
     }
 
-    protected void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
-        long startTime, String senderCondition) {
-        System.out.printf("%s:\t%s%d:%sTime Sent:%s" + "%s\n", makeSpaces(senderAction), makeSpaces(packetCount),
-            previousOffset, makeSpaces(endOffset), makeSpaces(System.currentTimeMillis() - startTime),
-            makeSpaces(senderCondition));
-    }
-
 }
