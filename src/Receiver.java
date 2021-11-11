@@ -7,15 +7,13 @@ import java.net.SocketException;
 import java.util.ArrayList;
 
 import objects.Packet;
-import util.Utility;
 
-import static util.Constants.GOOD_CHECKSUM;
 import static util.Constants.MAX_PACKET_SIZE;
 import static util.Constants.RECEIVED;
 import static util.Constants.RECEIVING;
 import static util.Utility.convertByteArrayToPacket;
-import static util.Utility.convertPacketToDatagram;
 import static util.Utility.makeSpaces;
+import static validation.ReceiverValidator.makeAndSendAcknowledgement;
 
 public class Receiver {// Server
 
@@ -61,9 +59,11 @@ public class Receiver {// Server
                     assert packetFromSender != null;
 
                     endOffset = (int) packetFromSender.getAck();
-                    printReceiverInfo(RECEIVING, startTime, packetFromSender.getSeqNo(), RECEIVED);
-                    makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
-                        packetFromSender.getSeqNo());
+                    String packetStatus =
+                        makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender, previousOffset,
+                            packetFromSender.getSeqNo());
+
+                    printReceiverInfo(RECEIVING, startTime, packetFromSender.getSeqNo(), packetStatus);
 
                     packetList.add(packetFromSender);
                     previousOffset = endOffset;
@@ -88,8 +88,8 @@ public class Receiver {// Server
     private static void printReceiverInfo(String receiverAction, long startTime, int packetCount,
         String receiverCondition) {
 
-        System.out.printf("%s:\t%s%s%s\n", receiverAction,
-            makeSpaces(System.currentTimeMillis() - startTime), makeSpaces(packetCount), receiverCondition);
+        System.out.printf("%s:\t%s%s%s\n", receiverAction, makeSpaces(System.currentTimeMillis() - startTime),
+            makeSpaces(packetCount), receiverCondition);
     }
 
     private static void parseCommandLine(String[] args, boolean overrideParse)
@@ -111,29 +111,4 @@ public class Receiver {// Server
 
     }
 
-    private static long ackErrorSim(long ack) throws IOException {
-
-        int simulateErrorRng = Utility.rngErrorGenerator();
-
-        if (simulateErrorRng == 1) { // corrupted
-            ack = 1;
-        } else if (simulateErrorRng == 2) { // dupe
-            ack = previousOffset;
-        }
-
-        return ack;
-    }
-
-    private static void makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,
-        Packet packetFromSender, int packetCount) throws IOException {
-
-        packetFromSender.setAck(ackErrorSim(packetFromSender.getAck()));
-
-        Packet packet = new Packet(GOOD_CHECKSUM, packetFromSender.getLength(), packetFromSender.getAck(), packetCount,
-            new byte[1]);
-
-        DatagramPacket datagramPacket =
-            convertPacketToDatagram(packet, receivedDatagram.getAddress(), receivedDatagram.getPort());
-        serverSocket.send(datagramPacket);
-    }
 }
