@@ -4,10 +4,9 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
-import objects.Packet;
-
-import static util.Utility.convertByteArrayToPacket;
+import static util.Constants.ACK_RECEIVED;
 import static util.Utility.makeStringDatagram;
+import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
 
@@ -17,24 +16,31 @@ public class SenderErrorHandler {
     public SenderErrorHandler() {
     }
 
-    public void resetRetries(){
+    public void resetRetries() {
         currentRetry = 0;
     }
 
-    public void sendPacket(DatagramSocket serverSocket, DatagramPacket datagramToResend)
+    public void resendPacket(DatagramSocket serverSocket, DatagramPacket datagramToResend, byte[] dataToReceive,
+        long endOffset, long previousOffset, int bytesRead, int packetCount)
         throws IOException, ClassNotFoundException {
 
-        if (currentRetry++ < MAX_RETRY) {
+        while (currentRetry++ < MAX_RETRY) {
             serverSocket.send(makeStringDatagram("error", datagramToResend.getAddress(), datagramToResend.getPort()));
-
             System.out.println("\t\tExecuting packet retry attempt: " + currentRetry + "/" + MAX_RETRY);
-            System.out.println("Packet: " + convertByteArrayToPacket(datagramToResend.getData()));
-
             serverSocket.send(datagramToResend);
-        } else {
-            System.out.println("\t\tPacket retry failed, closing program");
+
+            String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                packetCount);
+
+            if (ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
+                break;
+            }
+
+        }
+        if (currentRetry >= MAX_RETRY) {
+            System.out.println("\t\tPacket retry failed, stopping program");
+            serverSocket.send(makeStringDatagram("stop", datagramToResend.getAddress(), datagramToResend.getPort()));
             System.exit(400);
         }
-
     }
 }

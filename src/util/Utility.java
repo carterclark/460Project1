@@ -11,19 +11,6 @@ import objects.Packet;
 
 public class Utility {
 
-    public static final String SENT = "SENT";
-    public static final String DROP = "DROP";
-    public static final String ERR = "ERR";
-    public static final String RECV = "RECV";
-
-    public static final String DUPLICATE_ACK = "DuplAck";
-    public static final String ERROR_ACK = "ErrAck";
-    public static final String TIMEOUT = "TimeOut";
-
-    public static final int MAX_PACKET_SIZE = 4096;
-    public static final short GOOD_CHECKSUM = 0;
-    public static final short BAD_CHECKSUM = 1;
-
     public static void Usage() {
         System.out.println("\n\nMandatory command parameters must be entered in the order displayed here.");
         System.out.println("Parameters in [] are optional and must come before the three mandatory items.");
@@ -54,9 +41,10 @@ public class Utility {
 
     public static Packet convertByteArrayToPacket(byte[] data) throws IOException, ClassNotFoundException {
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(data);
-        ObjectInput input = new ObjectInputStream(bais);
+
         try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            ObjectInput input = new ObjectInputStream(bais);
             return (Packet) input.readObject();
         } catch (EOFException exception) {
             System.out.println("In util catch block");
@@ -84,5 +72,13 @@ public class Utility {
     public static DatagramPacket makeStringDatagram(String stringToSend, InetAddress inetAddress, int port) {
         byte[] data = stringToSend.getBytes(StandardCharsets.UTF_8);
         return new DatagramPacket(data, data.length, inetAddress, port);
+    }
+
+    public static String makeSpaces(Object object){
+        StringBuilder string = new StringBuilder(String.valueOf(object));
+        int numSpaces = 6 - string.length();
+        string.append(" ".repeat(Math.max(0, numSpaces)));
+
+        return string.toString();
     }
 }

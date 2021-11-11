@@ -1,4 +1,7 @@
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -6,24 +9,24 @@ import java.net.InetAddress;
 import error.SenderErrorHandler;
 import objects.Packet;
 
-import static util.Utility.GOOD_CHECKSUM;
-import static util.Utility.SENT;
-import static util.Utility.Usage;
+import static util.Constants.ACK_RECEIVED;
+import static util.Constants.GOOD_CHECKSUM;
+import static util.Constants.SENDING;
+import static util.Constants.SENT;
 import static util.Utility.convertPacketToByteArray;
+import static util.Utility.makeStringDatagram;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
     private SenderErrorHandler errorHandler = new SenderErrorHandler();
 
-    // main
     public static void main(String[] args) {
         Sender sender = new Sender();
         sender.run(args);
     }
 
-    private void run(String[] args) {
-
+    public void run(String[] args) {
         ParseCmdLine(args, true); // parse the parameters that were passed in
 
         try {
@@ -42,22 +45,17 @@ public class Sender extends SenderBase {// Client
             previousOffset = 0;
             long endOffset = 0;
 
-            System.out.println("\nSENDING FILE\n");
+            System.out.println("\nStarting Sender\n");
             do {
                 startTime = System.currentTimeMillis();
                 // read the input file in packetSize chunks, and send them to the server
                 bytesRead = inputStream.read(dataToSend);
                 if (bytesRead == -1) {
-                    // end of file, tell the receiver that we are done sending
-                    dataToSend = "end".getBytes();
-                    DatagramPacket datagramPacket =
-                        new DatagramPacket(dataToSend, dataToSend.length, address, receiverPort);
-                    serverSocket.send(datagramPacket);
+                    serverSocket.send(makeStringDatagram("end", address, receiverPort));
                     System.out.println("Sent end packet.  Terminating.");
                     break;
                 } else {
                     endOffset += bytesRead;
-                    printSenderInfo(endOffset, SENT);
 
                     // sending as packet object
                     byte[] packetDataToSend = convertPacketToByteArray(
@@ -66,14 +64,17 @@ public class Sender extends SenderBase {// Client
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
                     serverSocket.send(datagramToSend);
 
+                    String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                        packetCount);
+
+                    printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
                     //get acknowledgements from receiver
-                    if(!validatePacketFromReceiver(serverSocket, datagramToSend, dataToReceive, endOffset,
-                        previousOffset, bytesRead, packetCount)){
-                        //todo send packet to receiver from error handler
-                        errorHandler.sendPacket(serverSocket, datagramToSend);
+                    if (!ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
+                        errorHandler.resendPacket(serverSocket, datagramToSend, dataToReceive, endOffset,
+                            previousOffset, bytesRead, packetCount);
+                        errorHandler.resetRetries();
                     }
 
-                    errorHandler.resetRetries();
 
                     previousOffset = endOffset;
                     packetCount++;
