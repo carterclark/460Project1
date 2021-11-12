@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 import static util.Constants.ACK_RECEIVED;
+import static util.Constants.MAX_RETRY;
+import static util.Constants.RESENDING;
 import static util.Constants.SENDING;
 import static util.Utility.makeStringDatagram;
 import static util.Utility.printSenderInfo;
@@ -12,7 +14,6 @@ import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
 
-    private static final int MAX_RETRY = 3;
     private static int currentRetry = 0;
 
     public SenderErrorHandler() {
@@ -34,7 +35,7 @@ public class SenderErrorHandler {
                 validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
                     packetCount);
 
-            printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
+            printSenderInfo(RESENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
 
             if (ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                 break;
@@ -42,7 +43,7 @@ public class SenderErrorHandler {
 
         }
         if (currentRetry >= MAX_RETRY) {
-            System.out.println("\t\tPacket retry failed, stopping program");
+        System.out.printf("\n\t\tPacket retry failed after %d attempts, stopping program", currentRetry);
             serverSocket.send(makeStringDatagram("stop", datagramToResend.getAddress(), datagramToResend.getPort()));
             System.exit(400);
         }

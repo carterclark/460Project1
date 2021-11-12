@@ -7,9 +7,11 @@ import java.net.DatagramSocket;
 import objects.Packet;
 
 import static util.Constants.ACK_RECEIVED;
+import static util.Constants.BAD_CHECKSUM;
 import static util.Constants.CORRUPT;
 import static util.Constants.DUP_ACK;
 import static util.Constants.ERR_ACK;
+import static util.Constants.OUT_OF_SEQUENCE;
 import static util.Utility.convertByteArrayToPacket;
 import static util.Utility.makeStringDatagram;
 
@@ -24,35 +26,21 @@ public class SenderValidator {
         serverSocket.receive(receivedPacket);
 
         Packet packet = convertByteArrayToPacket(receivedPacket.getData());
-
         assert packet != null;
-        if (packet.getAck() == endOffset) {
-            // good ack
-        } else if (packet.getAck() == previousOffset) {
-            ackToReturn = DUP_ACK;
-        } else if (packet.getAck() == 1) { // Corrupted Ack
+
+        if (packet.getCheckSum() == BAD_CHECKSUM || packet.getAck() != endOffset || packet.getLength() != bytesRead) {
             ackToReturn = CORRUPT;
-        }
-
-        if (packet.getCheckSum() == 0) {
-            // good checksum
         } else {
-            System.out.println("bad checksum: " + packet.getCheckSum());
+            if (packet.getAck() == previousOffset) {
+                ackToReturn = DUP_ACK;
+            }
+            if (packet.getSeqNo() == packetCount - 1) {
+                ackToReturn = DUP_ACK;
+            } else if (packet.getSeqNo() != packetCount) {
+                return OUT_OF_SEQUENCE;
+            }
         }
 
-        if (packet.getLength() == bytesRead) {
-            // good length
-        } else {
-            System.out.println("bad length: " + packet.getLength() + " should be " + bytesRead);
-        }
-
-        if (packet.getSeqNo() == packetCount) {
-            // good seq
-        } else {
-            System.out.println("bad seq: " + packet.getSeqNo() + " should be " + packetCount);
-        }
-
-        receivedPacket.setData(ackToReturn.getBytes());
         serverSocket.send(makeStringDatagram(ackToReturn, receivedPacket.getAddress(), receivedPacket.getPort()));
 
         return ackToReturn;

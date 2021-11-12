@@ -9,6 +9,9 @@ public class Packet implements Serializable {
     private int seqNo; // 32-bit 4-byte Data packet Only
     private byte[] data; // 0-500 bytes. Data packet only. Variable
 
+    public Packet() {
+    }
+
     public Packet(short checkSum, int length, long ack, int seqNo, byte[] data) {
         this.checkSum = checkSum;
         this.length = length;

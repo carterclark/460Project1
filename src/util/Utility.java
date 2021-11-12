@@ -26,12 +26,12 @@ public class Utility {
     }
 
     public static void Usage() {
-        System.out.println("\n\nMandatory command parameters must be entered in the order displayed here.");
-        System.out.println("Parameters in [] are optional and must come before the three mandatory items.");
-        System.out.println("-d is the percentage of packets to alter.  -d 2.5 (not implemented)");
-        System.out.println("-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)");
-        System.out.println("-t is the timeout value.  -t 300 (not implemented)");
-        System.out.println("Usage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
+        System.out.println("\n\nMandatory command parameters must be entered in the order displayed here."
+        + "\nParameters in [] are optional and must come before the three mandatory items."
+        + "\n-d is the percentage of packets to alter.  -d 2.5"
+        + "\n-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)"
+        + "\n-t is the timeout value.  -t 300"
+        + "\nUsage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
         System.exit(1);
     }
 
@@ -61,7 +61,7 @@ public class Utility {
             ObjectInput input = new ObjectInputStream(bais);
             return (Packet) input.readObject();
         } catch (EOFException exception) {
-            System.out.println("In util catch block");
+            System.out.println("Exception encountered while reading packet, likely a byte array length issue");
             exception.printStackTrace();
         }
         return null;
