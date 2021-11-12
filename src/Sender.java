@@ -44,6 +44,7 @@ public class Sender extends SenderBase {// Client
             packetCount = 1;
             previousOffset = 0;
             long endOffset = 0;
+            byte[] packetDataToSend;
 
             System.out.println("\nStarting Sender\n");
             do {
@@ -51,14 +52,18 @@ public class Sender extends SenderBase {// Client
                 // read the input file in packetSize chunks, and send them to the server
                 bytesRead = inputStream.read(dataToSend);
                 if (bytesRead == -1) {
-                    serverSocket.send(makeStringDatagram("end", address, receiverPort));
+                    packetDataToSend = convertPacketToByteArray(
+                        new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, new byte[0]));
+                    datagramToSend =
+                        new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
+                    serverSocket.send(datagramToSend);
+
                     System.out.println("Sent end packet.  Terminating.");
                     break;
                 } else {
                     endOffset += bytesRead;
 
-                    // sending as packet object
-                    byte[] packetDataToSend = convertPacketToByteArray(
+                    packetDataToSend = convertPacketToByteArray(
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataToSend));
                     datagramToSend =
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);

@@ -14,7 +14,7 @@ public class SenderBase {
     protected static String receiverAddress = "";
     protected static String inputFile = "";
     protected static double dataGrams = 0.0;
-    protected static int numOfFrames = 15;
+    protected static int numOfFrames = 20;
     protected static int dataSize = MAX_PACKET_SIZE;
     protected static int timeOut = 300; // default timeout
     protected static int receiverPort = 0;
@@ -57,8 +57,7 @@ public class SenderBase {
                     // optional parameters
                     switch (arg.charAt(1)) {
                         case 'd':
-                            // if next argument also starts with a - then the value for the command line
-                            // switch was not provided
+
                             if (args[i + 1].startsWith("-")) {
                                 System.err.println("-d requires a value");
                                 Usage();
@@ -87,12 +86,8 @@ public class SenderBase {
                             }
                             break;
                     }
-                    // mandatory parameters
                 } else {
-                    // not a command line switch so must be the filename, receiver address, or
-                    // receiver port
-                    // must have at minimum the filename, the receiver address, and the receiver
-                    // port
+
                     if (i == (args.length - 3)) {
                         receiverAddress = args[i];
                     }

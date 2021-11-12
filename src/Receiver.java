@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
 
 import objects.Packet;
 
@@ -43,13 +45,9 @@ public class Receiver {// Server
                 receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
                 serverSocket.receive(receivedDatagram); // wait for a start packet
 
-                if (new String(receivedDatagram.getData()).startsWith("end")) {
-                    if (!packetList.isEmpty()) {
-                        packetList.remove(packetList.size() - 1);
-                    }
-                    System.out.println("Received end packet.  Terminating.");
-                    break;
-                } else if (new String(receivedDatagram.getData()).startsWith("error")) {
+                Packet packetFromSender;
+
+                if (new String(receivedDatagram.getData()).startsWith("error")) { // received error ack
                     if (!packetList.isEmpty()) {
                         packetList.remove(packetList.size() - 1);
                     }
@@ -57,7 +55,7 @@ public class Receiver {// Server
                     System.out.println("\t\tPacket retry failed, stopping program");
                     System.exit(400);
                 } else {
-                    Packet packetFromSender;
+
                     try {
                         packetFromSender = convertByteArrayToPacket(receivedDatagram.getData());
                     } catch (Exception e) {
@@ -65,8 +63,15 @@ public class Receiver {// Server
                         printReceiverInfo(RECEIVING, startTime, packetCount, CORRUPT);
                         continue;
                     }
-
                     assert packetFromSender != null;
+
+                    if (Arrays.equals(packetFromSender.getData(), new byte[0])) {
+                        if (!packetList.isEmpty()) {
+                            packetList.remove(packetList.size() - 1);
+                        }
+                        System.out.println("Received end packet.  Terminating.");
+                        break;
+                    }
                     endOffset = (int) packetFromSender.getAck();
                     String packetStatus =
                         makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender, previousOffset);
