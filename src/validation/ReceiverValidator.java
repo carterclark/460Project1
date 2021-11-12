@@ -22,7 +22,7 @@ public class ReceiverValidator {
                 packetFromSender.getSeqNo(), new byte[1]);
 
 
-        ackErrorSim(packetToSender, previousOffset);
+//        ackErrorSim(packetToSender, previousOffset);
 
         DatagramPacket datagramPacket =
             convertPacketToDatagram(packetToSender, receivedDatagram.getAddress(), receivedDatagram.getPort());

@@ -34,6 +34,7 @@ public class SenderValidator {
             if (packet.getAck() == previousOffset) {
                 ackToReturn = DUP_ACK;
             }
+
             if (packet.getSeqNo() == packetCount - 1) {
                 ackToReturn = DUP_ACK;
             } else if (packet.getSeqNo() != packetCount) {

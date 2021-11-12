@@ -55,7 +55,6 @@ public class Receiver {// Server
                     System.out.println("\t\tPacket retry failed, stopping program");
                     System.exit(400);
                 } else {
-
                     try {
                         packetFromSender = convertByteArrayToPacket(receivedDatagram.getData());
                     } catch (Exception e) {
@@ -65,6 +64,7 @@ public class Receiver {// Server
                     }
                     assert packetFromSender != null;
 
+                    // check if sender is done
                     if (Arrays.equals(packetFromSender.getData(), new byte[0])) {
                         if (!packetList.isEmpty()) {
                             packetList.remove(packetList.size() - 1);

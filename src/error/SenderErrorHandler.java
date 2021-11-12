@@ -3,6 +3,7 @@ package error;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.util.Arrays;
 
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.MAX_RETRY;
@@ -10,6 +11,7 @@ import static util.Constants.RESENDING;
 import static util.Constants.SENDING;
 import static util.Utility.makeStringDatagram;
 import static util.Utility.printSenderInfo;
+import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
@@ -43,9 +45,21 @@ public class SenderErrorHandler {
 
         }
         if (currentRetry >= MAX_RETRY) {
-        System.out.printf("\n\t\tPacket retry failed after %d attempts, stopping program", currentRetry);
+            System.out.printf("\n\t\tPacket retry failed after %d attempts, stopping program", currentRetry);
             serverSocket.send(makeStringDatagram("stop", datagramToResend.getAddress(), datagramToResend.getPort()));
             System.exit(400);
         }
+    }
+
+    public static byte[] getCorruptedData(byte[] corruptedData, byte[] oldData, double percentOfDataToCorrupt) {
+
+        int newLength = (int) (oldData.length * percentOfDataToCorrupt);
+        corruptedData = oldData.clone();
+
+        for (int i = 0; i < newLength; i++) {
+            corruptedData[i] = (byte) rngErrorGenerator();
+        }
+
+        return corruptedData;
     }
 }

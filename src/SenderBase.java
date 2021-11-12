@@ -6,17 +6,18 @@ import java.net.InetAddress;
 import java.util.Objects;
 
 import static util.Constants.MAX_PACKET_SIZE;
+import static util.Constants.TIMEOUT;
+import static util.Constants.TIMEOUT_MAX;
 import static util.Utility.Usage;
-import static util.Utility.makeSpaces;
 
 public class SenderBase {
 
     protected static String receiverAddress = "";
     protected static String inputFile = "";
-    protected static double dataGrams = 0.0;
+    protected static double percentOfDataToCorrupt = 0.0;
     protected static int numOfFrames = 20;
     protected static int dataSize = MAX_PACKET_SIZE;
-    protected static int timeOut = 300; // default timeout
+    protected static long timeOut = TIMEOUT_MAX; // default timeout
     protected static int receiverPort = 0;
     protected long startTime;
 
@@ -25,9 +26,9 @@ public class SenderBase {
 
     // for sending packets
     protected InetAddress address;
-    protected DatagramSocket serverSocket;
-    protected DatagramPacket datagramToSend;
-    protected byte[] dataToSend;
+    protected DatagramSocket socketToSender;
+    protected DatagramPacket datagramWithData;
+    protected byte[] dataFromFile;
     protected int bytesRead;
     protected long previousOffset;
     protected int packetCount;
@@ -57,12 +58,11 @@ public class SenderBase {
                     // optional parameters
                     switch (arg.charAt(1)) {
                         case 'd':
-
                             if (args[i + 1].startsWith("-")) {
-                                System.err.println("-d requires a value");
+                                System.err.println("-d requires a percent (as decimal) to corrupt");
                                 Usage();
                             } else {
-                                dataGrams = Double.parseDouble(args[++i]);
+                                percentOfDataToCorrupt = Double.parseDouble(args[++i]);
                             }
                             break;
                         case 's':
@@ -72,17 +72,17 @@ public class SenderBase {
                             } else {
                                 dataSize = Integer.parseInt(args[++i]);
                                 if (dataSize > 4096) {
-                                    System.err.println("Packetsize cannot be greater than 4096");
+                                    System.err.println("packet size cannot be greater than 4096");
                                     Usage();
                                 }
                             }
                             break;
                         case 't':
                             if (args[i + 1].startsWith("-")) {
-                                System.err.println("-t requires a timeout value");
+                                System.err.println("-t requires a timeout value in seconds");
                                 Usage();
                             } else {
-                                timeOut = Integer.parseInt(args[++i]);
+                                timeOut = Integer.parseInt(args[++i]) * (long) 1000;
                             }
                             break;
                     }
