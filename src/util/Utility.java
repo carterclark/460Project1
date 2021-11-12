@@ -61,7 +61,7 @@ public class Utility {
             ObjectInput input = new ObjectInputStream(bais);
             return (Packet) input.readObject();
         } catch (EOFException exception) {
-            System.out.println("In util catch block");
+            System.out.println("Exception encountered while reading packet, likely a byte array length issue");
             exception.printStackTrace();
         }
         return null;

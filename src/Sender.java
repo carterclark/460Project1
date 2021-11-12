@@ -12,7 +12,6 @@ import objects.Packet;
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.GOOD_CHECKSUM;
 import static util.Constants.SENDING;
-import static util.Constants.SENT;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.makeStringDatagram;
 import static util.Utility.printSenderInfo;
@@ -20,7 +19,7 @@ import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
 
-    private SenderErrorHandler errorHandler = new SenderErrorHandler();
+    private final SenderErrorHandler errorHandler = new SenderErrorHandler();
 
     public static void main(String[] args) {
         Sender sender = new Sender();
@@ -29,7 +28,7 @@ public class Sender extends SenderBase {// Client
 
     public void run(String[] args) {
         ParseCmdLine(args, true); // parse the parameters that were passed in
-
+        boolean isFirstRun = true;
         try {
             inputStream = new FileInputStream(inputFile); // open input stream
 
@@ -65,8 +64,9 @@ public class Sender extends SenderBase {// Client
                         new DatagramPacket(packetDataToSend, packetDataToSend.length, address, receiverPort);
                     serverSocket.send(datagramToSend);
 
-                    String ackFromReceiver = validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
-                        packetCount);
+                    String ackFromReceiver =
+                        validatePacketFromReceiver(serverSocket, dataToReceive, endOffset, previousOffset, bytesRead,
+                            packetCount);
 
                     printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, ackFromReceiver);
                     //get acknowledgements from receiver
@@ -75,7 +75,6 @@ public class Sender extends SenderBase {// Client
                             previousOffset, bytesRead, packetCount, startTime);
                         errorHandler.resetRetries();
                     }
-
 
                     previousOffset = endOffset;
                     packetCount++;

@@ -5,23 +5,27 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
 import objects.Packet;
-import util.Utility;
 
+import static util.Constants.BAD_CHECKSUM;
 import static util.Constants.GOOD_CHECKSUM;
 import static util.Utility.convertPacketToDatagram;
 import static util.Utility.getAckStatus;
+import static util.Utility.rngErrorGenerator;
 public class ReceiverValidator {
 
     public static String makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,
-        Packet packetFromSender, int previousOffset, int packetCount) throws IOException {
+        Packet packetFromSender, int previousOffset) throws IOException {
 
-        packetFromSender.setAck(ackErrorSim(packetFromSender.getAck(), previousOffset));
 
-        Packet packet = new Packet(GOOD_CHECKSUM, packetFromSender.getLength(), packetFromSender.getAck(), packetCount,
-            new byte[1]);
+        Packet packetToSender =
+            new Packet(packetFromSender.getCheckSum(), packetFromSender.getLength(), packetFromSender.getAck(),
+                packetFromSender.getSeqNo(), new byte[1]);
+
+
+        ackErrorSim(packetToSender, previousOffset);
 
         DatagramPacket datagramPacket =
-            convertPacketToDatagram(packet, receivedDatagram.getAddress(), receivedDatagram.getPort());
+            convertPacketToDatagram(packetToSender, receivedDatagram.getAddress(), receivedDatagram.getPort());
         serverSocket.send(datagramPacket);
 
         serverSocket.receive(receivedDatagram);
@@ -29,17 +33,16 @@ public class ReceiverValidator {
         return getAckStatus(new String(receivedDatagram.getData()));
     }
 
-    private static long ackErrorSim(long ack, int previousOffset) {
+    private static void ackErrorSim(Packet packetToSender, int previousOffset) {
 
-        int simulateErrorRng = Utility.rngErrorGenerator();
-
-        if (simulateErrorRng < 3) { // corrupted
-            ack = 1;
-        } else if (simulateErrorRng < 15) { // dupe
-            ack = previousOffset;
+        if (rngErrorGenerator() < 6) { // corrupted
+            packetToSender.setCheckSum(BAD_CHECKSUM);
+        } else if (rngErrorGenerator() < 9) { // dupe
+            packetToSender.setAck(previousOffset);
+        } else if (rngErrorGenerator() < 12) { // dupe
+            packetToSender.setSeqNo(packetToSender.getSeqNo() - 1);
         }
 
-        return ack;
     }
 }
 

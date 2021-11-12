@@ -22,6 +22,7 @@ public class Constants {
     public static final int MAX_PACKET_SIZE = 4096;
     public static final short GOOD_CHECKSUM = 0;
     public static final short BAD_CHECKSUM = 1;
+    public static final int MAX_RETRY = 6;
     public static final long TIMEOUT_MAX = 15 * 1000;
 
     public static final String[] STATUS_ARRAY = {ACK_RECEIVED};
