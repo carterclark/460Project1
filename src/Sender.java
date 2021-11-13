@@ -9,11 +9,11 @@ import java.net.InetAddress;
 import error.SenderErrorHandler;
 import objects.Packet;
 
-import static error.SenderErrorHandler.getCorruptedData;
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.GOOD_CHECKSUM;
 import static util.Constants.SENDING;
 import static util.Utility.convertPacketToByteArray;
+import static util.Utility.getCorruptedData;
 import static util.Utility.printSenderInfo;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
@@ -45,7 +45,7 @@ public class Sender extends SenderBase {// Client
             previousOffset = 0;
             long endOffset = 0;
             byte[] packetAsBytes;
-            byte[] corruptedData = new byte[0];
+            byte[] corruptedData;
 
             System.out.println("\nStarting Sender\n");
             do {
@@ -65,23 +65,22 @@ public class Sender extends SenderBase {// Client
                     packetAsBytes = convertPacketToByteArray(
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataFromFile));
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
-                    DatagramPacket tempPacket =
-                        new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
 
-                    //                    if(isFirstRun){
-                    //                        percentOfDataToCorrupt = 0.25;
-                    //                        isFirstRun = false;
-                    //                    }
+                    if (isFirstRun) {
+                        percentOfDataToCorrupt = 0.25;
+                        isFirstRun = false;
+                    }
 
-//                    if (percentOfDataToCorrupt > 0) { //simulate corruption based on user input
-//                        corruptedData = getCorruptedData(corruptedData, tempPacket.getData(), percentOfDataToCorrupt);
-//                        tempPacket.setData(corruptedData);
-//                        percentOfDataToCorrupt = 0;
-//                        socketToSender.send(tempPacket);
-//                    } else {
-//                        socketToSender.send(datagramWithData);
-//                    }
-                    socketToSender.send(datagramWithData);
+                    if (percentOfDataToCorrupt > 0) { //simulate corruption based on user input
+                        corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
+                        DatagramPacket corrupted =
+                            new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
+                        corrupted.setData(corruptedData);
+                        socketToSender.send(corrupted);
+                        percentOfDataToCorrupt = 0; // end error sim after one iteration
+                    } else {
+                        socketToSender.send(datagramWithData);
+                    }
 
                     String validationFromReceiver =
                         validatePacketFromReceiver(socketToSender, dataToReceive, endOffset, previousOffset, bytesRead,
