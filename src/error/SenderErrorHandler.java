@@ -7,9 +7,9 @@ import java.net.DatagramSocket;
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.MAX_RETRY;
 import static util.Constants.RESENDING;
-import static util.Constants.SENDING;
 import static util.Utility.makeStringDatagram;
 import static util.Utility.printSenderInfo;
+import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
@@ -40,10 +40,9 @@ public class SenderErrorHandler {
             if (ackFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
                 break;
             }
-
         }
         if (currentRetry >= MAX_RETRY) {
-        System.out.printf("\n\t\tPacket retry failed after %d attempts, stopping program", currentRetry);
+            System.out.printf("\n\t\tPacket retry failed after %d attempts, stopping program", currentRetry);
             serverSocket.send(makeStringDatagram("stop", datagramToResend.getAddress(), datagramToResend.getPort()));
             System.exit(400);
         }

@@ -104,4 +104,16 @@ public class Utility {
         }
         return "ERR";
     }
+
+    public static byte[] getCorruptedData(byte[] oldData, double percentOfDataToCorrupt) {
+
+        int newLength = (int) (oldData.length * percentOfDataToCorrupt);
+        byte[] corruptedData = oldData.clone();
+
+        for (int i = 0; i < newLength; i++) {
+            corruptedData[i] = (byte) rngErrorGenerator();
+        }
+
+        return corruptedData;
+    }
 }
