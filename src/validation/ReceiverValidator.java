@@ -21,10 +21,19 @@ public class ReceiverValidator {
             new Packet(packetFromSender.getCheckSum(), packetFromSender.getLength(), packetFromSender.getAck(),
                 packetFromSender.getSeqNo(), new byte[1]);
 
-        //error sim
-        byte[] corruptedData = getCorruptedData(convertPacketToByteArray(packetToSender), percentOfDataToCorrupt);
+        //simulate out of sequence error
+        if (rngErrorGenerator() < 15) {
+            packetToSender.setSeqNo(40);
+        }
+
+        // simulate corruption error
+        byte[] dataToSender = convertPacketToByteArray(packetToSender);
+        if (percentOfDataToCorrupt > 0 && rngErrorGenerator() < 15) {
+            dataToSender = getCorruptedData(convertPacketToByteArray(packetToSender), percentOfDataToCorrupt);
+        }
+
         DatagramPacket datagramPacket =
-            new DatagramPacket(corruptedData, corruptedData.length, receivedDatagram.getAddress(),
+            new DatagramPacket(dataToSender, dataToSender.length, receivedDatagram.getAddress(),
                 receivedDatagram.getPort());
 
         serverSocket.send(datagramPacket);

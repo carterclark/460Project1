@@ -15,6 +15,7 @@ import static util.Constants.SENDING;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.getCorruptedData;
 import static util.Utility.printSenderInfo;
+import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender extends SenderBase {// Client
@@ -27,8 +28,7 @@ public class Sender extends SenderBase {// Client
     }
 
     public void run(String[] args) {
-        ParseCmdLine(args, false); // parse the parameters that were passed in
-        boolean isFirstRun = true;
+        ParseCmdLine(args, true); // parse the parameters that were passed in
         try {
             inputStream = new FileInputStream(inputFile); // open input stream
 
@@ -45,7 +45,6 @@ public class Sender extends SenderBase {// Client
             previousOffset = 0;
             long endOffset = 0;
             byte[] packetAsBytes;
-            byte[] corruptedData;
 
             System.out.println("\nStarting Sender\n");
             do {
@@ -66,13 +65,9 @@ public class Sender extends SenderBase {// Client
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataFromFile));
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
 
-                    if (isFirstRun) {
-                        percentOfDataToCorrupt = 0.25;
-                        isFirstRun = false;
-                    }
-
-                    if (percentOfDataToCorrupt > 0) { //simulate corruption based on user input
-                        corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
+                    if (percentOfDataToCorrupt > 0 && rngErrorGenerator() < 15) { //simulate corruption based on user
+                        // input
+                        byte[] corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
                         DatagramPacket corrupted =
                             new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
                         corrupted.setData(corruptedData);
