@@ -6,7 +6,6 @@ import java.net.InetAddress;
 import java.util.Objects;
 
 import static util.Constants.MAX_PACKET_SIZE;
-import static util.Constants.TIMEOUT;
 import static util.Constants.TIMEOUT_MAX;
 import static util.Utility.Usage;
 
@@ -26,7 +25,7 @@ public class SenderBase {
 
     // for sending packets
     protected InetAddress address;
-    protected DatagramSocket socketToSender;
+    protected DatagramSocket socketToReceiver;
     protected DatagramPacket datagramWithData;
     protected byte[] dataFromFile;
     protected int bytesRead;
