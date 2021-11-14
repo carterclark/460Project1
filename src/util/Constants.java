@@ -25,5 +25,6 @@ public class Constants {
     public static final int MAX_RETRY = 6;
     public static final long TIMEOUT_MAX = 15 * 1000;
 
-    public static final String[] STATUS_ARRAY = {ACK_RECEIVED, CORRUPT};
+    public static final String[] STATUS_ARRAY = {ACK_RECEIVED, CORRUPT, SENDING, RESENDING, RECEIVING, SENT, DROP, ERR, 
+        OUT_OF_SEQUENCE, RECEIVED, DUP_ACK, ERR_ACK, TIMEOUT};
 }
