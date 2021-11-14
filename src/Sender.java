@@ -20,6 +20,8 @@ import static util.Utility.printSenderInfo;
 import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
+import static util.Constants.MAX_PACKET_SIZE;
+
 public class Sender extends SenderBase {// Client
 
     private final SenderErrorHandler errorHandler = new SenderErrorHandler();
@@ -35,7 +37,10 @@ public class Sender extends SenderBase {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
-            dataSize = (int) file.length() / numOfFrames++;
+            
+            if (dataSize == MAX_PACKET_SIZE) {
+                dataSize = (int) file.length() / numOfFrames++;
+            }
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             socketToReceiver = new DatagramSocket(); // Instantiate the datagram socket
