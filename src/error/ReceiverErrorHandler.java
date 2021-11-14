@@ -19,8 +19,10 @@ public class ReceiverErrorHandler {
 
         DatagramPacket datagramPacket =
             convertPacketToDatagram(packetToSender, receivedDatagram.getAddress(), receivedDatagram.getPort());
+        // sending an error to the sender validator
         serverSocket.send(datagramPacket);
 
+        // receiving corrupted ack from sender
         serverSocket.receive(receivedDatagram);
 
         return getAckStatus(new String(receivedDatagram.getData()));

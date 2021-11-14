@@ -9,7 +9,7 @@ import objects.Packet;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.getAckStatus;
 import static util.Utility.getCorruptedData;
-import static util.Utility.rngErrorGenerator;
+import static util.Utility.randomNumberGenerator;
 public class ReceiverValidator {
 
     public static String makeAndSendAcknowledgement(DatagramSocket serverSocket, DatagramPacket receivedDatagram,
@@ -19,17 +19,18 @@ public class ReceiverValidator {
             new Packet(packetFromSender.getCheckSum(), packetFromSender.getLength(), packetFromSender.getAck(),
                 packetFromSender.getSeqNo(), new byte[1]);
 
-        //simulate sequence error
-        if (rngErrorGenerator() < 15) {
+        // simulate sequence error
+        // randomNumberGenerator gives an integer between 1-100
+        if (randomNumberGenerator() < 15) {
             packetToSender.setSeqNo(packetFromSender.getSeqNo() - 1);
-        } else if (rngErrorGenerator() < 15) {
-            packetToSender.setSeqNo(40);
+        } else if (randomNumberGenerator() < 15) {
+            packetToSender.setSeqNo(randomNumberGenerator());
         }
 
         byte[] dataToSender = convertPacketToByteArray(packetToSender);
 
         // simulate corruption error
-        if (percentOfDataToCorrupt > 0 && rngErrorGenerator() < 15) {
+        if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 15) {
             dataToSender = getCorruptedData(convertPacketToByteArray(packetToSender), percentOfDataToCorrupt);
         }
 

@@ -21,7 +21,7 @@ import static util.Utility.Usage;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.getCorruptedData;
 import static util.Utility.printSenderInfo;
-import static util.Utility.rngErrorGenerator;
+import static util.Utility.randomNumberGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class Sender {// Client
@@ -40,10 +40,10 @@ public class Sender {// Client
 
     public static void main(String[] args) {
         Sender sender = new Sender();
-        sender.run(args);
+        sender.sendFile(args);
     }
 
-    public void run(String[] args) {
+    public void sendFile(String[] args) {
         ParseCmdLine(args, false); // parse the parameters that were passed in
         try {
             FileInputStream inputStream = new FileInputStream(inputFile); // open input stream
@@ -89,7 +89,7 @@ public class Sender {// Client
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
 
                     //simulate corruption based on user input
-                    if (percentOfDataToCorrupt > 0 && rngErrorGenerator() < 15) {
+                    if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 15) {
                         byte[] corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
                         DatagramPacket corruptedDatagramWithData =
                             new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
@@ -125,7 +125,6 @@ public class Sender {// Client
             socketToReceiver.close();
         } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
-            System.out.println(ex);
         } catch (SocketTimeoutException ex) {
             System.out.println(TIMEOUT + " On Sequence " + packetCount);
         } catch (IOException | ClassNotFoundException ex) {
