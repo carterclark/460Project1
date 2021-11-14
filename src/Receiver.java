@@ -21,19 +21,13 @@ import static validation.ReceiverValidator.makeAndSendAcknowledgement;
 
 public class Receiver {// Server
 
-    private static byte[] dataToReceive;
-
-    private static long startTime;
     private static DatagramSocket socketToSender;
     private static FileOutputStream outputStream = null;
-    private static DatagramPacket receivedDatagram;
-    private static int previousOffset = 0;
     private static double percentOfDataToCorrupt = 0;
 
     public static void main(String[] args) throws SocketException, FileNotFoundException, ClassNotFoundException {
 
         // logging counters/variables
-        int endOffset;
         int packetCount = 1;
         ArrayList<Packet> packetList = new ArrayList<>();
         parseCommandLine(args, true);
@@ -42,10 +36,10 @@ public class Receiver {// Server
         try {
             System.out.println("\nStarting Receiver\n");
             while (true) {
-                dataToReceive = new byte[MAX_PACKET_SIZE];
-                startTime = System.currentTimeMillis();
+                byte[] dataToReceive = new byte[MAX_PACKET_SIZE];
+                long startTime = System.currentTimeMillis();
 
-                receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
+                DatagramPacket receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
                 socketToSender.receive(receivedDatagram); // wait for a start packet
 
                 Packet packetFromSender;
@@ -76,7 +70,6 @@ public class Receiver {// Server
                         System.out.println("Received end packet.  Terminating.");
                         break;
                     }
-                    endOffset = (int) packetFromSender.getAck();
                     String packetStatus = makeAndSendAcknowledgement(socketToSender, receivedDatagram, packetFromSender,
                         percentOfDataToCorrupt);
 
@@ -84,7 +77,6 @@ public class Receiver {// Server
 
                     packetList.add(packetFromSender);
                     packetCount = packetFromSender.getSeqNo();
-                    previousOffset = endOffset;
                 }
             }
 

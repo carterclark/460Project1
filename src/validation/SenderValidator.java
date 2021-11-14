@@ -32,17 +32,17 @@ public class SenderValidator {
                 || packet.getLength() != bytesRead) {
                 ackToReturn = CORRUPT;
             } else {
-                if (packet.getAck() == previousOffset) {
-                    ackToReturn = DUP_ACK;
-                } else if (packet.getSeqNo() == packetCount - 1) {
+                if (packet.getAck() == previousOffset || packet.getSeqNo() == packetCount - 1) {
                     ackToReturn = DUP_ACK;
                 } else if (packet.getSeqNo() != packetCount) {
                     ackToReturn = OUT_OF_SEQUENCE;
                 }
             }
-        } catch (StreamCorruptedException e) {
+        } catch (StreamCorruptedException e) { // if the datagram can't be read, that means it's corrupted
             ackToReturn = CORRUPT;
         }
+
+        // got an ack from receiver, so send an ack back
         serverSocket.send(makeStringDatagram(ackToReturn, receivedPacket.getAddress(), receivedPacket.getPort()));
 
         return ackToReturn;
