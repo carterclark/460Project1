@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketTimeoutException;
 
 import error.SenderErrorHandler;
 import objects.Packet;
@@ -12,6 +13,7 @@ import objects.Packet;
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.GOOD_CHECKSUM;
 import static util.Constants.SENDING;
+import static util.Constants.TIMEOUT;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.getCorruptedData;
 import static util.Utility.printSenderInfo;
@@ -28,7 +30,7 @@ public class Sender extends SenderBase {// Client
     }
 
     public void run(String[] args) {
-        ParseCmdLine(args, true); // parse the parameters that were passed in
+        ParseCmdLine(args, false); // parse the parameters that were passed in
         try {
             inputStream = new FileInputStream(inputFile); // open input stream
 
@@ -36,7 +38,8 @@ public class Sender extends SenderBase {// Client
             dataSize = (int) file.length() / numOfFrames++;
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
-            socketToSender = new DatagramSocket(); // Instantiate the datagram socket
+            socketToReceiver = new DatagramSocket(); // Instantiate the datagram socket
+            socketToReceiver.setSoTimeout((int) timeOut);
             dataFromFile = new byte[dataSize]; // create the "send" buffer
             byte[] dataToReceive = new byte[dataSize]; // create the "receive" buffer
 
@@ -55,7 +58,7 @@ public class Sender extends SenderBase {// Client
                     packetAsBytes = convertPacketToByteArray(
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, new byte[0]));
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
-                    socketToSender.send(datagramWithData);
+                    socketToReceiver.send(datagramWithData);
                     System.out.println("Sent end packet.  Terminating.");
                     break;
                 } else {
@@ -71,21 +74,21 @@ public class Sender extends SenderBase {// Client
                         DatagramPacket corrupted =
                             new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
                         corrupted.setData(corruptedData);
-                        socketToSender.send(corrupted);
+                        socketToReceiver.send(corrupted);
                         percentOfDataToCorrupt = 0; // end error sim after one iteration
                     } else {
-                        socketToSender.send(datagramWithData);
+                        socketToReceiver.send(datagramWithData);
                     }
 
                     String validationFromReceiver =
-                        validatePacketFromReceiver(socketToSender, dataToReceive, endOffset, previousOffset, bytesRead,
+                        validatePacketFromReceiver(socketToReceiver, dataToReceive, endOffset, previousOffset, bytesRead,
                             packetCount);
 
                     printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, validationFromReceiver);
 
                     //get acknowledgements from receiver
                     if (!validationFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
-                        errorHandler.resendPacket(socketToSender, datagramWithData, dataToReceive, endOffset,
+                        errorHandler.resendPacket(socketToReceiver, datagramWithData, dataToReceive, endOffset,
                             previousOffset, bytesRead, packetCount, startTime);
                         errorHandler.resetRetries();
                     }
@@ -99,10 +102,12 @@ public class Sender extends SenderBase {// Client
             } while (true);
             // done, close streams/sockets
             inputStream.close();
-            socketToSender.close();
+            socketToReceiver.close();
         } catch (FileNotFoundException ex) {
             System.out.println("\n\nUNABLE TO LOCATE OR OPEN THE INPUT FILE: " + inputFile + "\n\n");
             System.out.println(ex);
+        } catch (SocketTimeoutException ex) {
+            System.out.println(TIMEOUT + " On Sequence " + packetCount);
         } catch (IOException | ClassNotFoundException ex) {
             ex.printStackTrace();
         }

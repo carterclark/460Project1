@@ -13,6 +13,7 @@ import objects.Packet;
 import static error.ReceiverErrorHandler.sendBadChecksumToSender;
 import static util.Constants.MAX_PACKET_SIZE;
 import static util.Constants.RECEIVING;
+import static util.Constants.TIMEOUT_MAX;
 import static util.Utility.Usage;
 import static util.Utility.convertByteArrayToPacket;
 import static util.Utility.makeSpaces;
@@ -23,7 +24,7 @@ public class Receiver {// Server
     private static byte[] dataToReceive;
 
     private static long startTime;
-    private static DatagramSocket serverSocket;
+    private static DatagramSocket socketToSender;
     private static FileOutputStream outputStream = null;
     private static DatagramPacket receivedDatagram;
     private static int previousOffset = 0;
@@ -36,6 +37,7 @@ public class Receiver {// Server
         int packetCount = 1;
         ArrayList<Packet> packetList = new ArrayList<>();
         parseCommandLine(args, true);
+        socketToSender.setSoTimeout((int) TIMEOUT_MAX);
 
         try {
             System.out.println("\nStarting Receiver\n");
@@ -44,7 +46,7 @@ public class Receiver {// Server
                 startTime = System.currentTimeMillis();
 
                 receivedDatagram = new DatagramPacket(dataToReceive, dataToReceive.length); // datagram
-                serverSocket.receive(receivedDatagram); // wait for a start packet
+                socketToSender.receive(receivedDatagram); // wait for a start packet
 
                 Packet packetFromSender;
 
@@ -59,7 +61,7 @@ public class Receiver {// Server
                     try {
                         packetFromSender = convertByteArrayToPacket(receivedDatagram.getData());
                     } catch (StreamCorruptedException e) {
-                        String status = sendBadChecksumToSender(serverSocket, receivedDatagram);
+                        String status = sendBadChecksumToSender(socketToSender, receivedDatagram);
                         printReceiverInfo(RECEIVING, startTime, packetCount, status);
                         continue;
                     }
@@ -75,9 +77,8 @@ public class Receiver {// Server
                         break;
                     }
                     endOffset = (int) packetFromSender.getAck();
-                    String packetStatus =
-                        makeAndSendAcknowledgement(serverSocket, receivedDatagram, packetFromSender,
-                            percentOfDataToCorrupt);
+                    String packetStatus = makeAndSendAcknowledgement(socketToSender, receivedDatagram, packetFromSender,
+                        percentOfDataToCorrupt);
 
                     printReceiverInfo(RECEIVING, startTime, packetFromSender.getSeqNo(), packetStatus);
 
@@ -94,7 +95,7 @@ public class Receiver {// Server
             }
 
             // done, close sockets/streams
-            serverSocket.close();
+            socketToSender.close();
             outputStream.close();
 
         } catch (IOException e) {
@@ -115,7 +116,7 @@ public class Receiver {// Server
         String arg;
 
         if (overrideParse) {
-            serverSocket = new DatagramSocket(8080);
+            socketToSender = new DatagramSocket(8080);
             outputStream = new FileOutputStream("new_image.png");
         } else {
             if (args.length < 2) {
@@ -142,7 +143,7 @@ public class Receiver {// Server
                     }
 
                     if (index == (args.length - 1)) {
-                        serverSocket = new DatagramSocket(Integer.parseInt(args[index]));
+                        socketToSender = new DatagramSocket(Integer.parseInt(args[index]));
                     }
                 }
                 index++;
