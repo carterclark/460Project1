@@ -35,7 +35,7 @@ public class Utility {
         System.exit(1);
     }
 
-    public static int rngErrorGenerator() {
+    public static int randomNumberGenerator() {
         Random random = new Random();
         // Gives a random number between 1-100
         return random.nextInt(101) + 1;
@@ -111,7 +111,7 @@ public class Utility {
         byte[] corruptedData = oldData.clone();
 
         for (int i = 0; i < newLength; i++) {
-            corruptedData[i] = (byte) rngErrorGenerator();
+            corruptedData[i] = (byte) randomNumberGenerator();
         }
 
         return corruptedData;

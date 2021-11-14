@@ -9,7 +9,6 @@ import static util.Constants.MAX_RETRY;
 import static util.Constants.RESENDING;
 import static util.Utility.makeStringDatagram;
 import static util.Utility.printSenderInfo;
-import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
 public class SenderErrorHandler {
