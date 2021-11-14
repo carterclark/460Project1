@@ -6,23 +6,48 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.Objects;
 
 import error.SenderErrorHandler;
 import objects.Packet;
 
 import static util.Constants.ACK_RECEIVED;
 import static util.Constants.GOOD_CHECKSUM;
+import static util.Constants.MAX_PACKET_SIZE;
 import static util.Constants.SENDING;
 import static util.Constants.TIMEOUT;
+import static util.Constants.TIMEOUT_MAX;
+import static util.Utility.Usage;
 import static util.Utility.convertPacketToByteArray;
 import static util.Utility.getCorruptedData;
 import static util.Utility.printSenderInfo;
 import static util.Utility.rngErrorGenerator;
 import static validation.SenderValidator.validatePacketFromReceiver;
 
-public class Sender extends SenderBase {// Client
+public class Sender {// Client
 
     private final SenderErrorHandler errorHandler = new SenderErrorHandler();
+
+    private static String receiverAddress = "";
+    private static String inputFile = "";
+    private static double percentOfDataToCorrupt = 0;
+    private static int numOfFrames = 20;
+    private static int dataSize = MAX_PACKET_SIZE;
+    private static long timeOut = TIMEOUT_MAX; // default timeout
+    private static int receiverPort = 0;
+    private long startTime;
+
+    private FileInputStream inputStream;
+    private File file;
+
+    // for sending packets
+    private InetAddress address;
+    private DatagramSocket socketToReceiver;
+    private DatagramPacket datagramWithData;
+    private byte[] dataFromFile;
+    private int bytesRead;
+    private long previousOffset;
+    private int packetCount;
 
     public static void main(String[] args) {
         Sender sender = new Sender();
@@ -81,8 +106,8 @@ public class Sender extends SenderBase {// Client
                     }
 
                     String validationFromReceiver =
-                        validatePacketFromReceiver(socketToReceiver, dataToReceive, endOffset, previousOffset, bytesRead,
-                            packetCount);
+                        validatePacketFromReceiver(socketToReceiver, dataToReceive, endOffset, previousOffset,
+                            bytesRead, packetCount);
 
                     printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, validationFromReceiver);
 
@@ -112,4 +137,82 @@ public class Sender extends SenderBase {// Client
             ex.printStackTrace();
         }
     }
+
+    // parse the command line parameters
+    private static void ParseCmdLine(String[] args, boolean overrideParse) {
+        int index = 0;
+        String arg;
+
+        if (overrideParse) {
+            receiverAddress = "localhost";
+            receiverPort = 8080;
+            inputFile = "src/image.png";
+        } else {
+            if (args.length < 3) {
+                System.out.println("\n\nINSUFFICIENT COMMAND LINE ARGUMENTS\n\n");
+                Usage();
+            }
+
+            while (index < args.length) {
+                arg = args[index];
+
+                // process any command line switches
+                if (arg.startsWith("-")) {
+
+                    // optional parameters
+                    switch (arg.charAt(1)) {
+                        case 'd':
+                            if (args[index + 1].startsWith("-")) {
+                                System.err.println("-d requires a percent (as decimal) to corrupt");
+                                Usage();
+                            } else {
+                                percentOfDataToCorrupt = Double.parseDouble(args[++index]);
+                            }
+                            break;
+                        case 's':
+                            if (args[index + 1].startsWith("-")) {
+                                System.err.println("-s requires a packet size");
+                                Usage();
+                            } else {
+                                dataSize = Integer.parseInt(args[++index]);
+                                if (dataSize > 4096) {
+                                    System.err.println("packet size cannot be greater than 4096");
+                                    Usage();
+                                }
+                            }
+                            break;
+                        case 't':
+                            if (args[index + 1].startsWith("-")) {
+                                System.err.println("-t requires a timeout value in seconds");
+                                Usage();
+                            } else {
+                                timeOut = Integer.parseInt(args[++index]) * (long) 1000;
+                            }
+                            break;
+                    }
+                } else {
+
+                    if (index == (args.length - 3)) {
+                        receiverAddress = args[index];
+                    }
+
+                    if (index == (args.length - 2)) {
+                        receiverPort = Integer.parseInt(args[index]);
+                    }
+
+                    if (index == (args.length - 1)) {
+                        inputFile = args[index];
+                    }
+                    index++;
+                }
+            }
+
+            // if values were not provided on commandline the defaults will trigger a usage
+            // message
+            if (Objects.equals(inputFile, "") || Objects.equals(receiverAddress, "") | receiverPort == 0) {
+                Usage();
+            }
+        }
+    }
+
 }
