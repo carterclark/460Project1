@@ -60,7 +60,10 @@ public class Sender {// Client
             inputStream = new FileInputStream(inputFile); // open input stream
 
             file = new File(inputFile);
-            dataSize = (int) file.length() / numOfFrames++;
+
+            if (dataSize == MAX_PACKET_SIZE) {
+                dataSize = (int) file.length() / numOfFrames++;
+            }
 
             address = InetAddress.getByName(receiverAddress); // convert receiverAddress to an InetAddress
             socketToReceiver = new DatagramSocket(); // Instantiate the datagram socket
