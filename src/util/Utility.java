@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 import objects.Packet;
@@ -18,12 +19,14 @@ import static util.Constants.STATUS_ARRAY;
 
 public class Utility {
 
-    public static void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
-        long startTime, String senderCondition) {
-        System.out.printf("%s:\t%s%d:%sTime Sent:%s" + "%s\n", makeSpaces(senderAction), makeSpaces(packetCount),
-            previousOffset, makeSpaces(endOffset), makeSpaces(System.currentTimeMillis() - startTime),
-            makeSpaces(senderCondition));
-    }
+	public static void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
+	        long startTime, String senderCondition) {
+			DecimalFormat df = new DecimalFormat("0000");
+			//Sending:1	0:464	Time Sent: 31 AckR
+	        System.out.printf("%s:\t%s\t%s:%s\tTime Sent:\s%s\t" + "%s\n", senderAction, packetCount,
+	            df.format(previousOffset), endOffset, System.currentTimeMillis() - startTime,
+	            senderCondition);
+	    }
 
     public static void Usage() {
         System.out.println("\n\nMandatory command parameters must be entered in the order displayed here."
