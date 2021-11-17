@@ -70,7 +70,7 @@ public class Receiver {// Server
                         String ackFromSender = sendBadChecksumToSender(socketToSender, receivedDatagram);
                         printReceiverInfo(RECEIVED, startTime, previousPacketCount, ackFromSender);
                         // Print Ack
-                        System.out.printf("\t%s\tACK\t%s\t%s\tin catch block", SENDING, previousPacketCount + 1, SENT);
+                        System.out.printf("\t%s\tACK %s %s", SENDING, previousPacketCount + 1, SENT);
                         continue;
                     }
                     assert packetFromSender != null;
