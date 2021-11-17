@@ -4,7 +4,8 @@ Steps to use:
 3. compile all the files using 
 `javac error/*.java objects/*.java util/*.java validation/*.java *.java`
 4. Start the receiver with `java Receiver 8080 new_image.png` in the same folder
-5. Open another terminal and start the sender with `java Sender localhost 8080 image.png`
+5. Open another terminal, enter the `src/` folder, 
+6. Start the sender with `java Sender localhost 8080 image.png`
 
 Optional settings on the Sender start up:
 `java Sender -d 0.25 -s 464 -t 15 localhost 8080 image.png`
