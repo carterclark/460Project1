@@ -11,10 +11,12 @@ import java.util.Objects;
 import error.SenderErrorHandler;
 import objects.Packet;
 
-import static util.Constants.ACK_RECEIVED;
+import static util.Constants.CORRUPT;
 import static util.Constants.GOOD_CHECKSUM;
 import static util.Constants.MAX_PACKET_SIZE;
+import static util.Constants.MOVE_WINDOW;
 import static util.Constants.SENDING;
+import static util.Constants.SENT;
 import static util.Constants.TIMEOUT;
 import static util.Constants.TIMEOUT_MAX;
 import static util.Utility.Usage;
@@ -44,7 +46,7 @@ public class Sender {// Client
     }
 
     public void sendFile(String[] args) {
-        ParseCmdLine(args, false); // parse the parameters that were passed in
+        parseCommandLine(args, false); // parse the parameters that were passed in
         try {
             FileInputStream inputStream = new FileInputStream(inputFile); // open input stream
 
@@ -69,6 +71,7 @@ public class Sender {// Client
 
             System.out.println("\nStarting Sender\n");
             do {
+                String datagramCondition = SENT;
                 long startTime = System.currentTimeMillis();
                 // read the input file in packetSize chunks, and send them to the server
                 int bytesRead = inputStream.read(dataFromFile);
@@ -83,41 +86,39 @@ public class Sender {// Client
                     break;
                 } else {
                     endOffset += bytesRead;
-
                     packetAsBytes = convertPacketToByteArray(
                         new Packet(GOOD_CHECKSUM, bytesRead, endOffset, packetCount, dataFromFile));
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
 
                     //simulate corruption based on user input
-                    if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 15) {
+                    if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 10) {
                         byte[] corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
                         DatagramPacket corruptedDatagramWithData =
                             new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
                         corruptedDatagramWithData.setData(corruptedData);
                         socketToReceiver.send(corruptedDatagramWithData);
-                        percentOfDataToCorrupt = 0; // end error sim after one iteration
+                        datagramCondition = CORRUPT;
                     } else {
                         socketToReceiver.send(datagramWithData);
                     }
+//                    socketToReceiver.send(datagramWithData);
 
+                    //get acknowledgements from receiver
                     String validationFromReceiver =
                         validatePacketFromReceiver(socketToReceiver, dataToReceive, endOffset, previousOffset,
                             bytesRead, packetCount);
 
-                    printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, validationFromReceiver);
+                    printSenderInfo(SENDING, packetCount, previousOffset, endOffset, startTime, datagramCondition,
+                        validationFromReceiver);
 
-                    //get acknowledgements from receiver
-                    if (!validationFromReceiver.equalsIgnoreCase(ACK_RECEIVED)) {
+                    if (!validationFromReceiver.equalsIgnoreCase(MOVE_WINDOW)) {
                         errorHandler.resendPacket(socketToReceiver, datagramWithData, dataToReceive, endOffset,
-                            previousOffset, bytesRead, packetCount, startTime);
+                            previousOffset, bytesRead, packetCount, startTime, validationFromReceiver);
                         errorHandler.resetRetries();
                     }
-
                     previousOffset = endOffset;
                     packetCount++;
                     dataFromFile = new byte[dataSize]; // flush buffer
-                    datagramWithData = null; // flush packet
-
                 }
             } while (true);
             // done, close streams/sockets
@@ -133,7 +134,7 @@ public class Sender {// Client
     }
 
     // parse the command line parameters
-    private static void ParseCmdLine(String[] args, boolean overrideParse) {
+    private static void parseCommandLine(String[] args, boolean overrideParse) {
         int index = 0;
         String arg;
 

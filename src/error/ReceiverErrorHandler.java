@@ -7,6 +7,9 @@ import java.net.DatagramSocket;
 import objects.Packet;
 
 import static util.Constants.BAD_CHECKSUM;
+import static util.Constants.ERR;
+import static util.Constants.SENDING;
+import static util.Constants.SENT;
 import static util.Utility.convertPacketToDatagram;
 import static util.Utility.getAckStatus;
 
