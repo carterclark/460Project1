@@ -33,7 +33,7 @@ public class Receiver {// Server
 
     private static DatagramSocket socketToSender;
     private static FileOutputStream outputStream = null;
-    private static double percentOfDataToCorrupt = 0.25;
+    private static double percentOfDataToCorrupt = 0;
 
     public static void main(String[] args) throws SocketException, FileNotFoundException, ClassNotFoundException {
 
