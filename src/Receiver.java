@@ -33,7 +33,7 @@ public class Receiver {// Server
 
     private static DatagramSocket socketToSender;
     private static FileOutputStream outputStream = null;
-    private static double percentOfDataToCorrupt = 0.25;
+    private static double percentOfDataToCorrupt = 0;
 
     public static void main(String[] args) throws SocketException, FileNotFoundException, ClassNotFoundException {
 
@@ -77,11 +77,6 @@ public class Receiver {// Server
 
                     // check if sender is done
                     if (Arrays.equals(packetFromSender.getData(), new byte[0])) {
-                        if (!packetList.isEmpty()) {
-                            packetList.remove(packetList.size() - 1);
-                            // get rid of last empty packet
-                            // because last packet sent has empty byte array we don't want to read
-                        }
                         System.out.println("\nReceived end packet.  Terminating.");
                         break;
                     }
@@ -108,7 +103,7 @@ public class Receiver {// Server
             outputStream.close();
 
         } catch (SocketTimeoutException ex) {
-            System.out.println(TIMEOUT + " On Sequence " + previousPacketCount + 1);
+            System.out.println(TIMEOUT + " On Sequence " + previousPacketCount);
         } catch (IOException e) {
             e.printStackTrace();
         }
