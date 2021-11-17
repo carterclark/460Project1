@@ -13,28 +13,62 @@ import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.Random;
 
+import jdk.swing.interop.SwingInterOpUtils;
 import objects.Packet;
 
+import static util.Constants.ACK_RECEIVED;
+import static util.Constants.CORRUPT;
+import static util.Constants.CORRUPTED_ACK;
+import static util.Constants.DUPL;
+import static util.Constants.DUP_ACK;
+import static util.Constants.ERR;
+import static util.Constants.ERR_ACK;
+import static util.Constants.MOVE_WINDOW;
+import static util.Constants.OUT_OF_SEQUENCE;
+import static util.Constants.RECEIVED;
+import static util.Constants.SENT;
 import static util.Constants.STATUS_ARRAY;
 
 public class Utility {
 
-	public static void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
-	        long startTime, String senderCondition) {
-			DecimalFormat df = new DecimalFormat("0000");
-			//Sending:1	0:464	Time Sent: 31 AckR
-	        System.out.printf("%s:\t%s\t%s:%s\tTime Sent:\s%s\t" + "%s\n", senderAction, packetCount,
-	            df.format(previousOffset), endOffset, System.currentTimeMillis() - startTime,
-	            senderCondition);
-	    }
+    public static void printSenderInfo(String senderAction, int packetCount, long previousOffset, long endOffset,
+        long startTime, String datagramCondition, String ackFromReceiver) {
+
+        if (ackFromReceiver.equals(CORRUPT)) {
+            ackFromReceiver = ERR_ACK;
+        } else if (ackFromReceiver.equals(ACK_RECEIVED)) {
+            ackFromReceiver = MOVE_WINDOW;
+        }
+
+        DecimalFormat df = new DecimalFormat("0000");
+        //Sending:1	0:464	Time Sent: 31 AckR
+        System.out.printf("%s:\t%s\t%s:%s\tTime Sent:\s%s\t%s\t%s %s %s\n", senderAction, packetCount,
+            df.format(previousOffset), endOffset, System.currentTimeMillis() - startTime, datagramCondition,
+            ACK_RECEIVED, packetCount, ackFromReceiver);
+    }
+
+    public static void printReceiverInfo(String receiverStatus, long startTime, int packetCount, String ackFromSender) {
+
+        switch (ackFromSender) {
+            case DUP_ACK -> {
+                receiverStatus = DUPL;
+                ackFromSender = OUT_OF_SEQUENCE;
+            }
+            case ERR_ACK -> ackFromSender = ERR;
+            default -> ackFromSender = RECEIVED;
+        }
+
+        System.out.printf("\n%s:\t%s%s%s", receiverStatus, makeSpaces(System.currentTimeMillis() - startTime),
+            makeSpaces(packetCount), ackFromSender);
+    }
 
     public static void Usage() {
         System.out.println("\n\nMandatory command parameters must be entered in the order displayed here."
-        + "\nParameters in [] are optional and must come before the three mandatory items."
-        + "\n-d is the percentage of packets to alter.  -d 2.5"
-        + "\n-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)"
-        + "\n-t is the timeout value.  -t 300"
-        + "\nUsage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
+            + "\nParameters in [] are optional and must come before the three mandatory items."
+            + "\n-d is the percentage of packets to alter.  -d 2.5"
+            + "\n-s is packet size, cannot exceed 4096.  -s 512 (default is 4096)"
+            + "\n-t is the timeout value.  -t 300"
+            + "\nUsage: java Sender [-d #.#] [-s ###] [-t ###] receiver_address receiver_port input_file");
         System.exit(1);
     }
 
@@ -105,7 +139,8 @@ public class Utility {
                 return ackStatus;
             }
         }
-        return "ERR";
+
+        return CORRUPTED_ACK;
     }
 
     public static byte[] getCorruptedData(byte[] oldData, double percentOfDataToCorrupt) {
