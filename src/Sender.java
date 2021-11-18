@@ -91,7 +91,7 @@ public class Sender {// Client
                     datagramWithData = new DatagramPacket(packetAsBytes, packetAsBytes.length, address, receiverPort);
 
                     //simulate corruption based on user input
-                    if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 10) {
+                    if (percentOfDataToCorrupt > 0 && randomNumberGenerator() < 15) {
                         byte[] corruptedData = getCorruptedData(packetAsBytes, percentOfDataToCorrupt);
                         DatagramPacket corruptedDatagramWithData =
                             new DatagramPacket(corruptedData, corruptedData.length, address, receiverPort);
